@@ -66,10 +66,45 @@ területnek a határa, akkor ahhoz, hogy kitöltsük az űrt, ahhoz az űrön k�
 levő "információt" kell bepropagálni a határon keresztül a területbe.
 Ezzel azt érjük el, hogy az izofóta\footnote{azonos fényerejű pixeleket
 összekötő vonal} vonalakat meghosszabbítjuk.
-Ezt az algoritmus iteratívan viszi végbe, folyamatosan zsugorítva az üres
+Ezt az algoritmus iteratívan viszi végbe, folyamatosan feltöltve az üres
 területet.
 
-% TODO: módszer leírása, implementációja
+Szeretnénk megtudni, hogy ahhoz, hogy megkapjuk egy adott pixel következő állapotát, mennyit kell hozzáadni a jelenlegi intenzitáshoz, azaz ha
+
+\[ I^{n+1}(i, j) = I^n(i, j) + \Delta t I^{n}_{t} (i,j) \]
+
+akkor mennyi a $I^{n}_t (i,j)$.
+
+Ehhez először kiszámoljuk az $L^n (i, j)$-t, ami a jelenlegi kép Laplace-szűrő alkalmazása után.
+Ebből meghatározhatjuk az információ változásának mennyiségét:
+\[ \overrightarrow{\delta L^{n}} = (L^n(i+1,j) - L^n(i-1,j), L^n(i,j+1) - L^n(i,j-1)) \]
+A vektor komponensei lényegében a Laplace-olt képen az X illetve Y-tengelyeken mért változás.
+
+Szükséges még továbbá a propagációs irány $N(i, j)$, amelyet a kép grádienséből számolhatunk ki:
+\[ N^{n}(i, j) = (-I^{n}_y(i, j), -I^{n}_x(i, j)) \]
+Ezt a vektort a hosszával elosztva normalizáljuk.
+
+Az utolsó két érték amit ki kell számolni azelőtt, hogy megkaphatnánk $I^{n}_t (i,j)$-t,
+az a $ \beta^n $ és a $ | \nabla I^n(i, j) | $.
+
+Az előbbi a $ \overrightarrow{ \delta L^n } $ és a normál vektor skalárszorzata:
+\[ \beta^{n} = \overrightarrow{ \delta L^n }(i, j) \cdot \frac{ N^n (i, j) }{ N^n (i, j) } \]
+míg az utóbbi:
+\[ | \nabla I^n(i, j) | =
+\begin{cases}
+    \sqrt{(I^n_{x b m})^2 + (I^n_{x f M})^2 + (I^n_{y b m})^2 + (I^n_{y b M})^2} &\mbox{ha } \beta^n > 0 \\
+    \sqrt{(I^n_{x b M})^2 + (I^n_{x f m})^2 + (I^n_{y b M})^2 + (I^n_{y b m})^2} &\mbox{ha } \beta^n < 0
+\end{cases}
+\]
+Alsóindexben az x/y a parciális derivált változója, a b/f pedig a különbségek iránya (b - negatív irány, f - pozitív irány).
+Az m/M azt jelzi, hogy a különbségeknek a nullával való minimumát vagy maximumát vesszük.
+Például a $I^n_{y b M}$-et definiálhatjuk úgy, hogy $ max(0, I^n(i, j - 1) - I^n(i, j + 1)) $,
+vagy $I^n_{x f m} = min(0, I^n(i + 1, j) - I^n(i - 1, j)$
+
+% TODO: 5. számú egyenletet most már össze tudjuk rakni
+% TODO: iterációs ciklus, anizotrópikus diffúzió
+% TODO: színtér
+% TODO: piramis
 
 \section{Felhasznált könyvtárak}
 
