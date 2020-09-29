@@ -1,4 +1,4 @@
-\documentclass[10pt, draft]{article}
+\documentclass[11pt]{article}
 
 \usepackage[margin=1.0in]{geometry}
 \usepackage[utf8]{inputenc}
@@ -44,11 +44,26 @@ kivéve a reklámok}.
 Az algoritmus $Y C_r C_b$ színtérben operál, mert így kevésbé érzékenyebb a
 képnek az emberi látás számára irreleváns változásokra.
 
-% TODO:
-Felirat BB előállítása: edge detection, 3-átlagolás (NTSC, 480i, frame
-rate-függetlenítés), gate filter, BB kiszámítása
+A feliratot körbeíró dobozt úgy állíthatjuk elő, hogy a videó képkockáin sorban
+élkeresést végzünk (Canny vagy Sobel) és az eredményeket akkumuláljuk.
+Mivel a videón lehetnek olyan állandó elemek, mint pl. a TV csatorna logója
+(ha a videó pl. egy TV felvétel),
+ezért azokat az éleket, amelyek az előző valahány képkockán is szerepeltek eltávolítjuk:
+\[
+    E(i) := E(i - 1) + Canny(I(i))
+\]
+\[
+    E(i) := E(i) - floor( \frac{E(i) + E(i - 1) + E(i - 2)}{3})
+\]
 
-Miután megvan a BB: vesszük a szövegdoboz hisztogramját a $C_b$ és $C_r$
+Ezután az $E(i)$ képen a bizonyos küszöb alá eső intenzitás értékeket átírjuk nullára,
+a többit pedig meghagyjuk ahogy volt, majd megvizsgáljuk azokat a jellegzetes helyeket,
+ahová feliratokat szoktak helyezni (a képernyő alja vagy ritkábban a teteje), hogy
+horizontális és vertikális irányban milyen gyorsan változnak az értékek.
+Ha horizontális irányban lassan, vertikális irányban pedig gyorsan, akkor
+jó eséllyel jelen vannak feliratok ebben a dobozban.
+
+Miután megvan a bounding box, vesszük a szövegdoboz hisztogramját a $C_b$ és $C_r$
 csatornákban és azokat a pixeleket, amelyek a leggyakoribb színeket veszik fel
 és megjelöljük őket a maszkban.
 Mivel mi a feliratot szeretnénk eltávolítani, ezért a szöveghez tartozó
@@ -59,7 +74,7 @@ pixelek a 0, a többi pixelek pedig az 1 értéket fogják felvenni.
 
 Miután eltávolítottuk a feliratokat a képkockából, be kell töltenünk az
 keletkezett üres részt.
-Ehhez Bertalmio, et al. \cite{bertalmio2000image} inpainting technikáját
+Ehhez Bertalmio, et al. inpainting technikáját \cite{bertalmio2000image}
 használom.
 Az algoritmus lényege, hogy ha adott valamilyen képterület, illetve ezen
 területnek a határa, akkor ahhoz, hogy kitöltsük az űrt, ahhoz az űrön kívül
@@ -115,7 +130,8 @@ Tehát a ciklus kilépési feltétele, hogy a $\sum I_t(i, j), \forall (i, j) \i
 Továbbá a fő ciklus kezdete előtt a kiindulási (egész) képet egyszer anizotróp diffúzáljuk,
 hogy csökkentsük azokat a zajokat, amelyek befolyásolhatnák az algoritmust. 
 
-Ha színes képekkel dolgozunk, akkor az inpainting-et az összes csatornán külön-külön végrehajtjuk.
+Ha színes képekkel dolgozunk, akkor az inpainting-et az összes csatornán külön-külön végrehajtjuk
+és az eredményeket újrakombináljuk.
 
 Ha $\Omega$ elég nagy, akkor sokáig tarthat amíg végez az algoritmus.
 Felgyorsítható a program, ha képpiramist használunk.
@@ -123,6 +139,11 @@ Először az input kép egy kicsinyített változatán futtatjuk le az algoritmu
 majd a nagyobb felbontású képen az $\Omega$-t a kisebb képben levő értékekkel inicializáljuk.
 
 \section{Felhasznált könyvtárak}
+A videófájl beolvasásához és kiírásához,
+valamint a képfeldolgozási alapműveletekhez (képbufferek kezelése, színtér konverziók, stb.)
+az OpenCV könyvtárat fogom használni.
+
+Ha kész és működik az inpainting algoritmus, akkor lehet megírom GPU-ra is OpenCL segítségével.
 
 \printbibliography
 \end{document}
