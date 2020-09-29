@@ -69,11 +69,13 @@ Ezzel azt érjük el, hogy az izofóta\footnote{azonos fényerejű pixeleket
 Ezt az algoritmus iteratívan viszi végbe, folyamatosan feltöltve az üres
 területet.
 
+\subsection{Update lépés}
 Szeretnénk megtudni, hogy ahhoz, hogy megkapjuk egy adott pixel következő állapotát, mennyit kell hozzáadni a jelenlegi intenzitáshoz, azaz ha
 
 \[ I^{n+1}(i, j) = I^n(i, j) + \Delta t I^{n}_{t} (i,j) \]
 
 akkor mennyi a $I^{n}_t (i,j)$.
+(a $\Delta t$ az a "tanulási" ráta. Minél kisebb, annál lassabban konvergál a rendszer; viszont ha túl nagy, akkor túllőhet a célon.)
 
 Ehhez először kiszámoljuk az $L^n (i, j)$-t, ami a jelenlegi kép Laplace-szűrő alkalmazása után.
 Ebből meghatározhatjuk az információ változásának mennyiségét:
@@ -85,10 +87,10 @@ Szükséges még továbbá a propagációs irány $N(i, j)$, amelyet a kép grá
 Ezt a vektort a hosszával elosztva normalizáljuk.
 
 Az utolsó két érték amit ki kell számolni azelőtt, hogy megkaphatnánk $I^{n}_t (i,j)$-t,
-az a $ \beta^n $ és a $ | \nabla I^n(i, j) | $.
+az a $ \beta^n $ és a $ \lvert \nabla I^n(i, j) \rvert $.
 
 Az előbbi a $ \overrightarrow{ \delta L^n } $ és a normál vektor skalárszorzata:
-\[ \beta^{n} = \overrightarrow{ \delta L^n }(i, j) \cdot \frac{ N^n (i, j) }{ N^n (i, j) } \]
+\[ \beta^{n} = \overrightarrow{ \delta L^n }(i, j) \cdot \frac{ N^n (i, j) }{ \lvert N^n (i, j) \rvert } \]
 míg az utóbbi:
 \[ | \nabla I^n(i, j) | =
 \begin{cases}
@@ -101,10 +103,24 @@ Az m/M azt jelzi, hogy a különbségeknek a nullával való minimumát vagy max
 Például a $I^n_{y b M}$-et definiálhatjuk úgy, hogy $ max(0, I^n(i, j - 1) - I^n(i, j + 1)) $,
 vagy $I^n_{x f m} = min(0, I^n(i + 1, j) - I^n(i - 1, j)$
 
-% TODO: 5. számú egyenletet most már össze tudjuk rakni
-% TODO: iterációs ciklus, anizotrópikus diffúzió
-% TODO: színtér
-% TODO: piramis
+Ezek alapján már összetudjuk rakni a $ I^n_t(i, j) $-t, amely
+\[ I^n_t (i, j) = (\overrightarrow{\delta L^n}(i, j) \cdot \frac{ N^n (i, j) }{ \lvert N^n (i, j) \rvert } ) \lvert \nabla I^n(i,j) \rvert \]
+
+\subsection{Restaurációs ciklus}
+A fő ciklusban $A=15$ alkalommal elvégezzük az inpainting lépést, majd $B=2$ alkalommal diffúzáljuk.
+Ezt ismételjük, amíg az algoritmus nem konvergál.
+Egy adott pixellel akkor vagyunk kész, ha az $I_t(i, j) = 0$, azaz nem kell módosítanunk.
+Tehát a ciklus kilépési feltétele, hogy a $\sum I_t(i, j), \forall (i, j) \in \Omega$ minimális.
+
+Továbbá a fő ciklus kezdete előtt a kiindulási (egész) képet egyszer anizotróp diffúzáljuk,
+hogy csökkentsük azokat a zajokat, amelyek befolyásolhatnák az algoritmust. 
+
+Ha színes képekkel dolgozunk, akkor az inpainting-et az összes csatornán külön-külön végrehajtjuk.
+
+Ha $\Omega$ elég nagy, akkor sokáig tarthat amíg végez az algoritmus.
+Felgyorsítható a program, ha képpiramist használunk.
+Először az input kép egy kicsinyített változatán futtatjuk le az algoritmust,
+majd a nagyobb felbontású képen az $\Omega$-t a kisebb képben levő értékekkel inicializáljuk.
 
 \section{Felhasznált könyvtárak}
 
