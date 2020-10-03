@@ -7,12 +7,14 @@ namespace Net.Easimer.KAA.Front
     class Oeip : IDisposable
     {
         private IntPtr _handle;
-        private Dictionary<Stage, Tuple<BufferColorSpace, byte[]>> _outputs;
+        private Dictionary<Stage, ImageBuffer> _outputs;
+
+        public Dictionary<Stage, uint> BenchmarkData { get; private set; }
 
         protected Oeip(IntPtr handle)
         {
             _handle = handle;
-            _outputs = new Dictionary<Stage, Tuple<BufferColorSpace, byte[]>>();
+            _outputs = new Dictionary<Stage, ImageBuffer>();
             BenchmarkData = new Dictionary<Stage, uint>();
 
             OeipCApi.RegisterStageOutputCallback(_handle, StageOutputCallback);
@@ -20,10 +22,17 @@ namespace Net.Easimer.KAA.Front
 
         public static Oeip Create(string pathToVideoFile)
         {
-            var handle = OeipCApi.OpenVideo(pathToVideoFile);
-            if(handle != IntPtr.Zero)
+            try
             {
-                return new Oeip(handle);
+                var handle = OeipCApi.OpenVideo(pathToVideoFile);
+                if (handle != IntPtr.Zero)
+                {
+                    return new Oeip(handle);
+                }
+            }
+            catch(System.DllNotFoundException)
+            {
+                throw new DllNotFoundException("Can't find one or two DLLs. Make sure that front.exe's working directory has a copy of both core.dll and opencv_world440.dll.");
             }
 
             return null;
@@ -45,18 +54,18 @@ namespace Net.Easimer.KAA.Front
 
             foreach(var kv in _outputs)
             {
-                StageHasOutput?.Invoke(kv.Key, kv.Value.Item1, kv.Value.Item2);
+                StageHasOutput?.Invoke(kv.Key, kv.Value);
             }
 
             return res;
         }
 
-        public Dictionary<Stage, uint> BenchmarkData { get; private set; }
-
-        protected void StageOutputCallback(Stage stage, BufferColorSpace cs, IntPtr buffer, int bytes)
+        protected void StageOutputCallback(Stage stage, BufferColorSpace cs, IntPtr buffer, int bytes, int width, int height, int stride)
         {
             var dest = new byte[bytes];
             Marshal.Copy(buffer, dest, 0, bytes);
+
+            _outputs[stage] = ImageBuffer.Create(dest, cs, width, height, stride);
         }
 
         protected void StageBenchmarkCallback(Stage stage, uint microsecs)
@@ -84,12 +93,12 @@ namespace Net.Easimer.KAA.Front
             UNSPEC_3D
         }
 
-        public delegate void OutputCallback(Stage stage, BufferColorSpace cs, byte[] buffer);
+        public delegate void OutputCallback(Stage stage, ImageBuffer buf);
         public delegate void BenchmarkCallback(Stage stage, uint microsecs);
 
         private static class OeipCApi
         {
-            public delegate void OutputCallback(Stage stage, BufferColorSpace cs, IntPtr buffer, int bytes);
+            public delegate void OutputCallback(Stage stage, BufferColorSpace cs, IntPtr buffer, int bytes, int width, int height, int stride);
             public delegate void BenchmarkCallback(Stage stage, uint microsecs);
 
             [DllImport("core.dll", EntryPoint = "oeip_open_video")]

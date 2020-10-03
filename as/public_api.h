@@ -21,7 +21,7 @@ enum oeip_buffer_color_space : int {
     OEIP_COLSPACE_3D_UNSPEC
 };
 
-using oeip_cb_output = void (*)(oeip_stage stage, oeip_buffer_color_space cs, void const *buffer, int bytes);
+using oeip_cb_output = void (*)(oeip_stage stage, oeip_buffer_color_space cs, void const *buffer, int bytes, int width, int height, int stride);
 using oeip_cb_benchmark = void (*)(oeip_stage stage, unsigned microsecs);
 
 PAPI oeip_handle oeip_open_video(char const *path);

@@ -9,6 +9,9 @@ set(SRC_LIB
     oeip.def
     public_api.h
     public_api.cpp
+
+    oeip.cpp
+    oeip.h
 )
 
 set(SRC_FRONT
