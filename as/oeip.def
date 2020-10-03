@@ -1,0 +1,7 @@
+LIBRARY OEIP
+EXPORTS
+    oeip_open_video                         @1
+    oeip_close_video                        @2
+    oeip_step                               @3
+    oeip_register_stage_output_callback     @4
+    oeip_register_stage_benchmark_callback  @5
