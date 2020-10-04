@@ -44,18 +44,14 @@ protected:
 			return false;
 		}
 
-		if (has_output_callback) {
-			emit_output(OEIP_STAGE_INPUT, OEIP_COLSPACE_RGB888_RGB, buf);
-		}
+		emit_output(OEIP_STAGE_INPUT, OEIP_COLSPACE_RGB888_RGB, buf);
 
 		// TODO: ha ezt a sort kitoroljuk, akkor nem fog mukodni az algo
 		// Nem kene a Canny()-nek kiuriteni az edge_cur matrixot?
 		edge_cur = get_edge_buffer(buf);
 		Canny(buf, edge_cur, 0, 0);
 
-		if (has_output_callback) {
-			emit_output(OEIP_STAGE_CURRENT_EDGE_BUFFER, OEIP_COLSPACE_R8, edge_cur);
-		}
+		emit_output(OEIP_STAGE_CURRENT_EDGE_BUFFER, OEIP_COLSPACE_R8, edge_cur);
 
 		auto& e1 = _edge_buffers[_edge_buffers_cursor];
 
@@ -76,8 +72,19 @@ protected:
 
 		subtract(_edge_buffers[_edge_buffers_cursor], avg_bin, _edge_buffers[_edge_buffers_cursor], cv::noArray(), CV_16S);		
 
+		emit_output(OEIP_STAGE_ACCUMULATED_EDGE_BUFFER, OEIP_COLSPACE_R8, avg_bin);
+
 		if (has_output_callback) {
-			emit_output(OEIP_STAGE_ACCUMULATED_EDGE_BUFFER, OEIP_COLSPACE_R8, avg_bin);
+			for (int i = 0; i < OEIP_STAGE_OUTPUT + 1; i++) {
+				auto& buf = _output_buffers[i];
+				if (!buf.empty()) {
+					auto ptr = buf.ptr<unsigned char>();
+					auto width = buf.cols;
+					auto height = buf.rows;
+					auto stride = buf.step[0];
+					_cb_output((oeip_stage)i, _output_buffer_formats[i], ptr, height * stride, width, height, stride);
+				}
+			}
 		}
 
 		return true;
@@ -101,18 +108,10 @@ protected:
 		return grad;
 	}
 
-	void emit_output(oeip_stage stage, oeip_buffer_color_space cs, cv::Mat const& mat) {
-		auto ptr = mat.ptr<unsigned char>();
-		auto width = mat.cols;
-		auto height = mat.rows;
-		auto stride = mat.step[0];
-		_cb_output(stage, cs, ptr, height * stride, width, height, stride);
-	}
-
-	void emit_output(oeip_stage stage, oeip_buffer_color_space cs, cv::UMat const& mat) {
-		cv::Mat local;
-		mat.copyTo(local);
-		emit_output(stage, cs, local);
+	template<typename InputArray>
+	void emit_output(oeip_stage stage, oeip_buffer_color_space cs, InputArray mat) {
+		mat.copyTo(_output_buffers[stage]);
+		_output_buffer_formats[stage] = cs;
 	}
 
 private:
@@ -122,6 +121,9 @@ private:
 
 	cv::UMat _edge_buffers[total_edge_buffers];
 	int _edge_buffers_cursor = 0;
+
+	cv::Mat _output_buffers[oeip_stage::OEIP_STAGE_OUTPUT + 1];
+	oeip_buffer_color_space _output_buffer_formats[oeip_stage::OEIP_STAGE_OUTPUT + 1];
 };
 
 std::unique_ptr<IOEIP> make_oeip(char const* pathToVideo) {
