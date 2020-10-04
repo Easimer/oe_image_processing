@@ -1,16 +1,16 @@
 using System;
+using System.Windows.Forms;
 
 namespace Net.Easimer.KAA.Front
 {
     class Program
     {
+        [STAThread]
         static void Main(string[] args)
         {
-            using (var oeip = Oeip.Create("video.mp4"))
-            {
-                var res = oeip.Step();
-                Console.WriteLine($"Step res: {res}");
-            }
+            Application.EnableVisualStyles();
+            Application.SetCompatibleTextRenderingDefault(false);
+            Application.Run(new FormMain());
         }
     }
 }

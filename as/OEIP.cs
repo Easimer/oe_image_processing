@@ -8,6 +8,7 @@ namespace Net.Easimer.KAA.Front
     {
         private IntPtr _handle;
         private Dictionary<Stage, ImageBuffer> _outputs;
+        private OeipCApi.OutputCallback _cb_output;
 
         public Dictionary<Stage, uint> BenchmarkData { get; private set; }
 
@@ -17,7 +18,9 @@ namespace Net.Easimer.KAA.Front
             _outputs = new Dictionary<Stage, ImageBuffer>();
             BenchmarkData = new Dictionary<Stage, uint>();
 
-            OeipCApi.RegisterStageOutputCallback(_handle, StageOutputCallback);
+            // "Pinneljuk" a delegate-et hogy ne GC-zodjon mikozben a lib meg pointert tarol ra
+            _cb_output = StageOutputCallback;
+            OeipCApi.RegisterStageOutputCallback(_handle, _cb_output);
         }
 
         public static Oeip Create(string pathToVideoFile)
@@ -43,6 +46,7 @@ namespace Net.Easimer.KAA.Front
             var h = _handle;
             _handle = IntPtr.Zero;
             OeipCApi.CloseVideo(h);
+            _cb_output = null;
         }
 
         public bool Step()

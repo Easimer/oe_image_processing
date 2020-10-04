@@ -15,12 +15,27 @@ set(SRC_LIB
 )
 
 set(SRC_FRONT
+    App.config
     OEIP.cs
+    ImageBuffer.cs
+    FormMain.resx
+    FormPipeLine.resx
 )
 
 set(SRC_FRONT_GUI
     Program.cs
+    FormMain.cs
+    FormMain.Designer.cs
+    FormPipeline.cs
+    FormPipeline.Designer.cs
+    Properties/AssemblyInfo.cs
+    Properties/Resources.Designer.cs
+    Properties/Resources.resx
+    Properties/Settings.Designer.cs
+    Properties/Settings.settings
 )
+
+csharp_set_windows_forms_properties(${SRC_FRONT_GUI})
 
 add_library(core SHARED ${SRC_LIB})
 target_link_libraries(core PRIVATE ${OpenCV_LIBS})
@@ -30,20 +45,14 @@ add_executable(front ${SRC_FRONT} ${SRC_FRONT_GUI})
 
 set_property(TARGET front PROPERTY VS_DOTNET_REFERENCES
     "Microsoft.CSharp"
-    "PresentationCore"
-    "PresentationFramework"
     "System"
     "System.Core"
     "System.Data"
-    "System.Data.DataSetExtensions"
-    "System.Net.Http"
-    "System.Xaml"
-    "System.Xml"
-    "System.Xml.Linq"
-    "WindowsBase"
+    "System.Drawing"
+    "System.Windows.Forms"
 )
 
-target_compile_options(front PRIVATE -langversion:latest /platform:x64)
+target_compile_options(front PRIVATE -langversion:latest /platform:x64 /unsafe)
 
 set_property(TARGET front PROPERTY WIN32_EXECUTABLE TRUE)
 set_property(TARGET front PROPERTY VS_DOTNET_TARGET_FRAMEWORK_VERSION "v4.7.2")
