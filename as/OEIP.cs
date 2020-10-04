@@ -9,6 +9,7 @@ namespace Net.Easimer.KAA.Front
         private IntPtr _handle;
         private Dictionary<Stage, ImageBuffer> _outputs;
         private OeipCApi.OutputCallback _cb_output;
+        private OeipCApi.BenchmarkCallback _cb_benchmark;
 
         public Dictionary<Stage, uint> BenchmarkData { get; private set; }
 
@@ -21,6 +22,8 @@ namespace Net.Easimer.KAA.Front
             // "Pinneljuk" a delegate-et hogy ne GC-zodjon mikozben a lib meg pointert tarol ra
             _cb_output = StageOutputCallback;
             OeipCApi.RegisterStageOutputCallback(_handle, _cb_output);
+            _cb_benchmark = StageBenchmarkCallback;
+            OeipCApi.RegisterStageBenchmarkCallback(_handle, _cb_benchmark);
         }
 
         public static Oeip Create(string pathToVideoFile)
@@ -118,7 +121,7 @@ namespace Net.Easimer.KAA.Front
             public static extern bool RegisterStageOutputCallback(IntPtr handle, OutputCallback fun);
 
             [DllImport("core.dll", EntryPoint = "oeip_register_stage_benchmark_callback")]
-            public static extern bool RegisterStageBenchmarkCallback(IntPtr handle, Stage stage, BenchmarkCallback fun);
+            public static extern bool RegisterStageBenchmarkCallback(IntPtr handle, BenchmarkCallback fun);
         }
     }
 }
