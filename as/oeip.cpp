@@ -34,14 +34,19 @@ protected:
 		cv::cvtColor(buf, buf_gray, cv::COLOR_BGR2GRAY);
 
 		if (_cb_output != nullptr) {
-			auto ptr = buf_gray.ptr<unsigned char>();
-			auto width = buf_gray.cols;
-			auto height = buf_gray.rows;
-			auto stride = buf_gray.step[0] * buf_gray.elemSize();
-			_cb_output(OEIP_STAGE_INPUT, OEIP_COLSPACE_1D_GRAY, ptr, height * stride, width, height, stride);
+			emit_output(OEIP_STAGE_INPUT, OEIP_COLSPACE_1D_GRAY, buf_gray);
 		}
 
 		return true;
+	}
+
+	template<typename Mat>
+	void emit_output(oeip_stage stage, oeip_buffer_color_space cs, Mat const& mat) {
+		auto ptr = mat.ptr<unsigned char>();
+		auto width = mat.cols;
+		auto height = mat.rows;
+		auto stride = mat.step[0] * mat.elemSize();
+		_cb_output(stage, cs, ptr, height * stride, width, height, stride);
 	}
 
 private:
