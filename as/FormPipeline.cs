@@ -198,5 +198,13 @@ namespace Net.Easimer.KAA.Front
         {
             stepTimer.Stop();
         }
+
+        protected override void OnClosed(EventArgs e)
+        {
+            base.OnClosed(e);
+
+            _oeip.Dispose();
+            _oeip = null;
+        }
     }
 }

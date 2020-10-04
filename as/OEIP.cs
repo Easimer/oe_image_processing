@@ -54,7 +54,6 @@ namespace Net.Easimer.KAA.Front
 
         public bool Step()
         {
-            _outputs.Clear();
             BenchmarkData.Clear();
 
             var res = OeipCApi.Step(_handle);
@@ -69,9 +68,24 @@ namespace Net.Easimer.KAA.Front
 
         protected void StageOutputCallback(Stage stage, BufferColorSpace cs, IntPtr buffer, int bytes, int width, int height, int stride)
         {
-            var dest = new byte[bytes];
-            Marshal.Copy(buffer, dest, 0, bytes);
+            byte[] dest = null;
 
+            if(_outputs.ContainsKey(stage))
+            {
+                var old_buf = _outputs[stage];
+                if(old_buf.Reuseable(bytes))
+                {
+                    dest = old_buf.Data;
+                }
+            }
+            
+            if(dest == null)
+            {
+                // Nem tudtuk ujrahasznalni a regi buffert
+                dest = new byte[bytes];
+            }
+
+            Marshal.Copy(buffer, dest, 0, bytes);
             _outputs[stage] = ImageBuffer.Create(dest, cs, width, height, stride);
         }
 
