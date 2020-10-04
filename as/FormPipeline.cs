@@ -29,14 +29,20 @@ namespace Net.Easimer.KAA.Front
             switch(stage)
             {
                 case Oeip.Stage.Input:
-                    OutputGrayscale(picInput, buf);
+                    OutputGrayscale(imgInput, buf);
+                    break;
+                case Oeip.Stage.CurrentEdgeBuffer:
+                    OutputGrayscale(imgEdgeCurrent, buf);
+                    break;
+                case Oeip.Stage.AccumulatedEdgeBuffer:
+                    OutputGrayscale(imgEdgeCurrent, buf);
                     break;
                 default:
                     break;
             }
         }
 
-        private void OutputGrayscale(PictureBox box, ImageBuffer buf)
+        private void OutputGrayscale(OutputControl box, ImageBuffer buf)
         {
             var img = new Bitmap(buf.Width, buf.Height, PixelFormat.Format32bppArgb);
             
@@ -65,48 +71,27 @@ namespace Net.Easimer.KAA.Front
             }
 
             img.UnlockBits(dat);
-            
 
-            /*
-            for (int y = 0; y < buf.Height; y++)
+            if(box.OutputImage != null)
             {
-                var buf_base = buf.Stride * y;
-                for (int x = 0; x < buf.Width; x++)
-                {
-                    var c = buf.Data[buf_base + x];
-                    img.SetPixel(x, y, Color.FromArgb(c, c, c));
-                }
-            }
-            */
-
-            if(box.Image != null)
-            {
-                box.Image.Dispose();
+                box.OutputImage.Dispose();
             }
 
-            box.Image = img;
+            box.OutputImage = img;
         }
 
         private void InitializeComponent()
         {
             this.components = new System.ComponentModel.Container();
-            this.picInput = new System.Windows.Forms.PictureBox();
             this.stepTimer = new System.Windows.Forms.Timer(this.components);
             this.toolStrip = new System.Windows.Forms.ToolStrip();
             this.btnStart = new System.Windows.Forms.ToolStripButton();
             this.btnStop = new System.Windows.Forms.ToolStripButton();
-            ((System.ComponentModel.ISupportInitialize)(this.picInput)).BeginInit();
+            this.imgInput = new Net.Easimer.KAA.Front.OutputControl();
+            this.imgEdgeCurrent = new Net.Easimer.KAA.Front.OutputControl();
+            this.imgEdgeAccumulated = new Net.Easimer.KAA.Front.OutputControl();
             this.toolStrip.SuspendLayout();
             this.SuspendLayout();
-            // 
-            // picInput
-            // 
-            this.picInput.Location = new System.Drawing.Point(34, 48);
-            this.picInput.Name = "picInput";
-            this.picInput.Size = new System.Drawing.Size(306, 256);
-            this.picInput.SizeMode = System.Windows.Forms.PictureBoxSizeMode.StretchImage;
-            this.picInput.TabIndex = 0;
-            this.picInput.TabStop = false;
             // 
             // stepTimer
             // 
@@ -120,7 +105,7 @@ namespace Net.Easimer.KAA.Front
             this.btnStop});
             this.toolStrip.Location = new System.Drawing.Point(0, 0);
             this.toolStrip.Name = "toolStrip";
-            this.toolStrip.Size = new System.Drawing.Size(637, 25);
+            this.toolStrip.Size = new System.Drawing.Size(922, 25);
             this.toolStrip.TabIndex = 1;
             this.toolStrip.Text = "toolStrip1";
             // 
@@ -143,15 +128,43 @@ namespace Net.Easimer.KAA.Front
             this.btnStop.Text = "toolStripButton1";
             this.btnStop.Click += new System.EventHandler(this.OnClickStop);
             // 
+            // imgInput
+            // 
+            this.imgInput.Location = new System.Drawing.Point(12, 28);
+            this.imgInput.Name = "imgInput";
+            this.imgInput.OutputImage = null;
+            this.imgInput.OutputStageName = "Input";
+            this.imgInput.Size = new System.Drawing.Size(296, 267);
+            this.imgInput.TabIndex = 2;
+            // 
+            // imgEdgeCurrent
+            // 
+            this.imgEdgeCurrent.Location = new System.Drawing.Point(314, 28);
+            this.imgEdgeCurrent.Name = "imgEdgeCurrent";
+            this.imgEdgeCurrent.OutputImage = null;
+            this.imgEdgeCurrent.OutputStageName = "Current edge buffer";
+            this.imgEdgeCurrent.Size = new System.Drawing.Size(296, 267);
+            this.imgEdgeCurrent.TabIndex = 3;
+            // 
+            // imgEdgeAccumulated
+            // 
+            this.imgEdgeAccumulated.Location = new System.Drawing.Point(616, 28);
+            this.imgEdgeAccumulated.Name = "imgEdgeAccumulated";
+            this.imgEdgeAccumulated.OutputImage = null;
+            this.imgEdgeAccumulated.OutputStageName = "Accumulated edge buffer";
+            this.imgEdgeAccumulated.Size = new System.Drawing.Size(296, 267);
+            this.imgEdgeAccumulated.TabIndex = 4;
+            // 
             // FormPipeline
             // 
-            this.ClientSize = new System.Drawing.Size(637, 380);
+            this.ClientSize = new System.Drawing.Size(922, 307);
+            this.Controls.Add(this.imgEdgeAccumulated);
+            this.Controls.Add(this.imgEdgeCurrent);
+            this.Controls.Add(this.imgInput);
             this.Controls.Add(this.toolStrip);
-            this.Controls.Add(this.picInput);
             this.Name = "FormPipeline";
             this.ShowIcon = false;
             this.Text = "Pipeline";
-            ((System.ComponentModel.ISupportInitialize)(this.picInput)).EndInit();
             this.toolStrip.ResumeLayout(false);
             this.toolStrip.PerformLayout();
             this.ResumeLayout(false);
@@ -164,7 +177,9 @@ namespace Net.Easimer.KAA.Front
         private ToolStrip toolStrip;
         private ToolStripButton btnStart;
         private ToolStripButton btnStop;
-        private PictureBox picInput;
+        private OutputControl imgEdgeCurrent;
+        private OutputControl imgEdgeAccumulated;
+        private OutputControl imgInput;
 
         private void TimerTick(object sender, EventArgs e)
         {
