@@ -14,11 +14,12 @@ enum oeip_stage : int {
 };
 
 enum oeip_buffer_color_space : int {
-    OEIP_COLSPACE_1D_GRAY = 0,
-    OEIP_COLSPACE_3D_RGB,
-    OEIP_COLSPACE_3D_YCBCR,
+    OEIP_COLSPACE_R8 = 0,
+    OEIP_COLSPACE_R16,
+    OEIP_COLSPACE_RGB888_RGB,
+    OEIP_COLSPACE_RGB888_YCBCR,
 
-    OEIP_COLSPACE_3D_UNSPEC
+    OEIP_COLSPACE_RGB888_UNSPEC
 };
 
 using oeip_cb_output = void (*)(oeip_stage stage, oeip_buffer_color_space cs, void const *buffer, int bytes, int width, int height, int stride);

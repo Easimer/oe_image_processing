@@ -17,7 +17,7 @@ set(SRC_LIB
 set(SRC_FRONT
     App.config
     OEIP.cs
-    ImageBuffer.cs
+    ImageConversion.cs
     FormMain.resx
     FormPipeLine.resx
     OutputControl.resx
@@ -53,6 +53,7 @@ set_property(TARGET front PROPERTY VS_DOTNET_REFERENCES
     "System.Data"
     "System.Drawing"
     "System.Windows.Forms"
+    "System.Numerics.Vectors"
 )
 
 target_compile_options(front PRIVATE -langversion:latest /platform:x64 /unsafe)
@@ -60,3 +61,4 @@ target_compile_options(front PRIVATE -langversion:latest /platform:x64 /unsafe)
 set_property(TARGET front PROPERTY WIN32_EXECUTABLE TRUE)
 set_property(TARGET front PROPERTY VS_DOTNET_TARGET_FRAMEWORK_VERSION "v4.7.2")
 
+add_dependencies(front core)

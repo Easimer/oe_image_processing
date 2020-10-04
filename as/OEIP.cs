@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Generic;
+using System.Drawing;
+using System.Drawing.Imaging;
 using System.Runtime.InteropServices;
 
 namespace Net.Easimer.KAA.Front
@@ -7,7 +9,7 @@ namespace Net.Easimer.KAA.Front
     class Oeip : IDisposable
     {
         private IntPtr _handle;
-        private Dictionary<Stage, ImageBuffer> _outputs;
+        private Dictionary<Stage, Bitmap> _outputs;
         private OeipCApi.OutputCallback _cb_output;
         private OeipCApi.BenchmarkCallback _cb_benchmark;
 
@@ -16,7 +18,7 @@ namespace Net.Easimer.KAA.Front
         protected Oeip(IntPtr handle)
         {
             _handle = handle;
-            _outputs = new Dictionary<Stage, ImageBuffer>();
+            _outputs = new Dictionary<Stage, Bitmap>();
             BenchmarkData = new Dictionary<Stage, uint>();
 
             // "Pinneljuk" a delegate-et hogy ne GC-zodjon mikozben a lib meg pointert tarol ra
@@ -68,25 +70,35 @@ namespace Net.Easimer.KAA.Front
 
         protected void StageOutputCallback(Stage stage, BufferColorSpace cs, IntPtr buffer, int bytes, int width, int height, int stride)
         {
-            byte[] dest = null;
+            Bitmap img = null;
 
-            if(_outputs.ContainsKey(stage))
+            switch(cs)
             {
-                var old_buf = _outputs[stage];
-                if(old_buf.Reuseable(bytes))
+                case BufferColorSpace.R8:
+                    img = ImageConversion.CreateGrayscale8(buffer, width, height, stride);
+                    break;
+                case BufferColorSpace.R16:
+                    img = ImageConversion.CreateGrayscale16(buffer, width, height, stride);
+                    break;
+                case BufferColorSpace.RGB888_RGB:
+                    img = ImageConversion.CreateRGB(buffer, width, height, stride);
+                    break;
+                default:
+                    return;
+            }
+
+            if(img != null)
+            {
+                if(_outputs.ContainsKey(stage))
                 {
-                    dest = old_buf.Data;
+                    _outputs[stage].Dispose();
                 }
+                _outputs[stage] = img;
             }
-            
-            if(dest == null)
+            else
             {
-                // Nem tudtuk ujrahasznalni a regi buffert
-                dest = new byte[bytes];
+                _outputs.Remove(stage);
             }
-
-            Marshal.Copy(buffer, dest, 0, bytes);
-            _outputs[stage] = ImageBuffer.Create(dest, cs, width, height, stride);
         }
 
         protected void StageBenchmarkCallback(Stage stage, uint microsecs)
@@ -108,13 +120,16 @@ namespace Net.Easimer.KAA.Front
 
         public enum BufferColorSpace
         {
-            Gray_1D = 0,
-            RGB,
-            YCBCR,
-            UNSPEC_3D
+            R8 = 0,
+            R16,
+
+            RGB888_RGB,
+            RGB888_YCBCR,
+
+            RGB888_UNSPEC
         }
 
-        public delegate void OutputCallback(Stage stage, ImageBuffer buf);
+        public delegate void OutputCallback(Stage stage, Bitmap buf);
         public delegate void BenchmarkCallback(Stage stage, uint microsecs);
 
         private static class OeipCApi

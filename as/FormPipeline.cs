@@ -24,60 +24,30 @@ namespace Net.Easimer.KAA.Front
             _oeip.StageHasOutput += Output;
         }
 
-        private void Output(Oeip.Stage stage, ImageBuffer buf)
+        private void Output(Oeip.Stage stage, Bitmap buf)
         {
+            OutputControl ctl = null;
             switch(stage)
             {
                 case Oeip.Stage.Input:
-                    OutputGrayscale(imgInput, buf);
+                    ctl = imgInput;
                     break;
                 case Oeip.Stage.CurrentEdgeBuffer:
-                    OutputGrayscale(imgEdgeCurrent, buf);
+                    ctl = imgEdgeCurrent;
                     break;
                 case Oeip.Stage.AccumulatedEdgeBuffer:
-                    OutputGrayscale(imgEdgeCurrent, buf);
+                    ctl = imgEdgeAccumulated;
                     break;
                 default:
                     break;
             }
-        }
 
-        private void OutputGrayscale(OutputControl box, ImageBuffer buf)
-        {
-            var img = new Bitmap(buf.Width, buf.Height, PixelFormat.Format32bppArgb);
-            
-            var rect = new Rectangle(0, 0, buf.Width, buf.Height);
-            var dat = img.LockBits(rect, ImageLockMode.WriteOnly, PixelFormat.Format32bppArgb);
-            var scan0 = dat.Scan0;
-            var stride = dat.Stride;
-
-            unsafe
+            if(ctl == null)
             {
-                var p = (uint*)scan0;
-                var elemStride = stride / 4;
-                for(int y = 0; y < buf.Height; y++)
-                {
-                    var buf_base = y * buf.Stride;
-
-                    for(int x = 0; x < buf.Width; x++)
-                    {
-                        uint c = buf.Data[buf_base + x];
-                        var v = 0xFF000000 | (c << 16) | (c << 8) | (c << 0);
-                        p[x] = v;
-                    }
-
-                    p += elemStride;
-                }
+                return;
             }
 
-            img.UnlockBits(dat);
-
-            if(box.OutputImage != null)
-            {
-                box.OutputImage.Dispose();
-            }
-
-            box.OutputImage = img;
+            ctl.OutputImage = buf;
         }
 
         private void InitializeComponent()
@@ -202,6 +172,8 @@ namespace Net.Easimer.KAA.Front
         protected override void OnClosed(EventArgs e)
         {
             base.OnClosed(e);
+
+            stepTimer.Stop();
 
             _oeip.Dispose();
             _oeip = null;
