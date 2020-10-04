@@ -20,6 +20,7 @@ set(SRC_FRONT
     ImageBuffer.cs
     FormMain.resx
     FormPipeLine.resx
+    OutputControl.resx
 )
 
 set(SRC_FRONT_GUI
@@ -28,6 +29,8 @@ set(SRC_FRONT_GUI
     FormMain.Designer.cs
     FormPipeline.cs
     FormPipeline.Designer.cs
+    OutputControl.cs
+    OutputControl.Designer.cs
     Properties/AssemblyInfo.cs
     Properties/Resources.Designer.cs
     Properties/Resources.resx
