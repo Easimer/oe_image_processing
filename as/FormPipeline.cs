@@ -38,6 +38,9 @@ namespace Net.Easimer.KAA.Front
                 case Oeip.Stage.AccumulatedEdgeBuffer:
                     ctl = imgEdgeAccumulated;
                     break;
+                case Oeip.Stage.SubtitleMask:
+                    ctl = imgSubtitleMask;
+                    break;
                 default:
                     break;
             }
@@ -60,6 +63,7 @@ namespace Net.Easimer.KAA.Front
             this.imgInput = new Net.Easimer.KAA.Front.OutputControl();
             this.imgEdgeCurrent = new Net.Easimer.KAA.Front.OutputControl();
             this.imgEdgeAccumulated = new Net.Easimer.KAA.Front.OutputControl();
+            this.imgSubtitleMask = new Net.Easimer.KAA.Front.OutputControl();
             this.toolStrip.SuspendLayout();
             this.SuspendLayout();
             // 
@@ -75,7 +79,7 @@ namespace Net.Easimer.KAA.Front
             this.btnStop});
             this.toolStrip.Location = new System.Drawing.Point(0, 0);
             this.toolStrip.Name = "toolStrip";
-            this.toolStrip.Size = new System.Drawing.Size(922, 25);
+            this.toolStrip.Size = new System.Drawing.Size(1214, 25);
             this.toolStrip.TabIndex = 1;
             this.toolStrip.Text = "toolStrip1";
             // 
@@ -125,9 +129,20 @@ namespace Net.Easimer.KAA.Front
             this.imgEdgeAccumulated.Size = new System.Drawing.Size(296, 267);
             this.imgEdgeAccumulated.TabIndex = 4;
             // 
+            // imgSubtitleMask
+            // 
+            this.imgSubtitleMask.Location = new System.Drawing.Point(918, 28);
+            this.imgSubtitleMask.Name = "imgSubtitleMask";
+            this.imgSubtitleMask.OutputImage = null;
+            this.imgSubtitleMask.OutputStageName = "Subtitle mask";
+            this.imgSubtitleMask.Size = new System.Drawing.Size(296, 267);
+            this.imgSubtitleMask.TabIndex = 5;
+            // 
             // FormPipeline
             // 
-            this.ClientSize = new System.Drawing.Size(922, 307);
+            this.AutoScroll = true;
+            this.ClientSize = new System.Drawing.Size(922, 337);
+            this.Controls.Add(this.imgSubtitleMask);
             this.Controls.Add(this.imgEdgeAccumulated);
             this.Controls.Add(this.imgEdgeCurrent);
             this.Controls.Add(this.imgInput);
@@ -178,5 +193,7 @@ namespace Net.Easimer.KAA.Front
             _oeip.Dispose();
             _oeip = null;
         }
+
+        private OutputControl imgSubtitleMask;
     }
 }

@@ -3,7 +3,44 @@
 #include <opencv2/videoio.hpp>
 #include <opencv2/imgproc.hpp>
 
-static constexpr int total_edge_buffers = 16;
+// TODO: This should be configurable by the user
+static constexpr int total_edge_buffers = 4;
+
+static int get_edge_buffer_weight(int c, int n, int i) {
+	// i = c -> n
+	// else (i + n - c) `mod` n
+	return (i != c) ? ((i + n - c) % n) : (n);
+}
+
+static void two_major_bins(cv::Mat const& H, int* idx0, int* idx1) {
+	int N = H.cols * H.rows;
+
+	auto max0 = H.at<float>(0);
+	auto max1 = H.at<float>(0);
+	int max0_idx = 0;
+	int max1_idx = 0;
+
+	for (int i = 1; i < N; i++) {
+		auto v = H.at<float>(i);
+
+		if (v > max0) {
+			max0 = v;
+			max0_idx = i;
+		}
+	}
+
+	for (int i = 1; i < N; i++) {
+		auto v = H.at<float>(i);
+
+		if (max1 < v && v < max0) {
+			max1 = v;
+			max1_idx = i;
+		}
+	}
+
+	*idx0 = max0_idx;
+	*idx1 = max1_idx;
+}
 
 class OEIP : public IOEIP {
 public:
@@ -16,11 +53,12 @@ public:
 		auto height = (int)_video.get(cv::CAP_PROP_FRAME_HEIGHT);
 		auto fps = round(_video.get(cv::CAP_PROP_FPS));
 
+		_mask_subtitle_bottom = cv::UMat::zeros(height, width, CV_8U);
+		_mask_subtitle_bottom(cv::Rect(width * 0.2f, height * 0.8f, width * 0.6f, height * 0.2f)) = 255;
+
 		for (int i = 0; i < total_edge_buffers; i++) {
 			cv::Mat tmp;
 			_edge_buffers[i] = cv::UMat(height, width, CV_16S);
-			//_video.read(tmp);
-			//_edge_buffers[i] = get_edge_buffer(tmp);
 		}
 	}
 
@@ -62,17 +100,79 @@ protected:
 
 		cv::UMat acc(buf.size(), CV_32F, cv::Scalar(0));
 		for (int i = 0; i < total_edge_buffers; i++) {
-			accumulate(_edge_buffers[i], acc);
+			cv::Mat eb;
+			_edge_buffers[i].copyTo(eb);
+			auto w = get_edge_buffer_weight(_edge_buffers_cursor, total_edge_buffers, i);
+			accumulate(w * eb, acc);
 		}
 
 		cv::UMat avg, avg_bin;
 
-		acc.convertTo(avg, CV_8U, 1 / (float)total_edge_buffers);
+		auto avg_div = total_edge_buffers * (total_edge_buffers + 1) / 2.0f;
+
+		acc.convertTo(avg, CV_8U, 1 / avg_div);
 		threshold(avg, avg_bin, 252, 255, cv::THRESH_BINARY);
 
 		subtract(_edge_buffers[_edge_buffers_cursor], avg_bin, _edge_buffers[_edge_buffers_cursor], cv::noArray(), CV_16S);		
 
 		emit_output(OEIP_STAGE_ACCUMULATED_EDGE_BUFFER, OEIP_COLSPACE_R8, avg_bin);
+
+		// megjeloljuk azokat a pixeleket, amelyek a YCbCr kep Cb es Cr csatornajanak hisztogramjaiban
+		// benne vannak a ket major bin-ben
+		cv::Mat buf_ycrcb;
+		cvtColor(buf, buf_ycrcb, cv::COLOR_RGB2YCrCb);
+		cv::Mat buf_ycrcb_channels[3];
+		cv::split(buf_ycrcb, buf_ycrcb_channels);
+
+		cv::Mat buf_cr;
+		cv::Mat buf_cb;
+
+		// TODO: leftover kod? minek csinalunk masolatot?
+		buf_ycrcb_channels[1].copyTo(buf_cr);
+		buf_ycrcb_channels[2].copyTo(buf_cb);
+
+		cv::bitwise_and(buf_ycrcb_channels[1], _mask_subtitle_bottom, buf_cr);
+		cv::bitwise_and(buf_ycrcb_channels[2], _mask_subtitle_bottom, buf_cb);
+
+		int histSize = 256;
+		float range[] = { 0, 256 };
+		const float* histRange = { range };
+
+		cv::Mat cr_hist, cb_hist;
+
+		// TODO: talan az acc. edge buffert kene maszkkent hasznalni amikor
+		// a ket foszint keressuk, nem pedig a textbox maszkot.
+
+		cv::calcHist(&buf_cr, 1, 0, _mask_subtitle_bottom, cr_hist, 1, &histSize, &histRange, true, false);
+		cv::calcHist(&buf_cb, 1, 0, _mask_subtitle_bottom, cb_hist, 1, &histSize, &histRange, true, false);
+
+		int cr0, cr1;
+		int cb0, cb1;
+		two_major_bins(cr_hist, &cr0, &cr1);
+		two_major_bins(cb_hist, &cb0, &cb1);
+
+		cv::Mat thresh_cr0, thresh_cr1;
+		cv::inRange(buf_cr, cv::Scalar(cr0), cv::Scalar(cr0), thresh_cr0);
+		cv::inRange(buf_cr, cv::Scalar(cr1), cv::Scalar(cr1), thresh_cr1);
+		cv::Mat thresh_cr = cv::max(thresh_cr0, thresh_cr1);
+
+		cv::Mat thresh_cb0, thresh_cb1;
+		cv::inRange(buf_cb, cv::Scalar(cb0), cv::Scalar(cb0), thresh_cb0);
+		cv::inRange(buf_cb, cv::Scalar(cb1), cv::Scalar(cb1), thresh_cb1);
+		cv::Mat thresh_cb = cv::max(thresh_cb0, thresh_cb1);
+
+		cv::Mat thresh(thresh_cr.rows, thresh_cr.cols, CV_32F);
+		thresh = cv::max(thresh_cr, thresh_cb);
+
+		cv::Mat subtitle_mask;
+		cv::Mat thresh_blur3, avg_bin_blur3;
+
+		cv::GaussianBlur(thresh, thresh_blur3, { 3, 3 }, 0.0f);
+		cv::GaussianBlur(avg_bin, avg_bin_blur3, { 3, 3 }, 0.0f);
+
+		cv::bitwise_and(avg_bin_blur3, thresh_blur3, subtitle_mask);
+
+		emit_output(OEIP_STAGE_SUBTITLE_MASK, OEIP_COLSPACE_R8, subtitle_mask);
 
 		if (has_output_callback) {
 			for (int i = 0; i < OEIP_STAGE_OUTPUT + 1; i++) {
@@ -119,6 +219,7 @@ private:
 	oeip_cb_output _cb_output;
 	oeip_cb_benchmark _cb_benchmark;
 
+	cv::UMat _mask_subtitle_bottom;
 	cv::UMat _edge_buffers[total_edge_buffers];
 	int _edge_buffers_cursor = 0;
 
