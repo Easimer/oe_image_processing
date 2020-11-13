@@ -104,18 +104,14 @@ protected:
 		threshold(avg, avg_bin, 252, 255, cv::THRESH_BINARY);
 	}
 
-	bool step_impl() {
-		cv::Mat buf;
-		bool has_output_callback = _cb_output != nullptr;
-		
-		_video.read(buf);
-
-		if (buf.empty()) {
+	// _avg_subtitle_mask-ba teszi a maszkot
+	bool make_subtitle_mask(cv::Mat const& frame) {
+		if (frame.empty()) {
 			return false;
 		}
 
 		if (!_init) {
-			auto edges = detect_edges(buf);
+			auto edges = detect_edges(frame);
 			for (int i = 0; i < total_edge_buffers; i++) {
 				_edge_buffers[i] = edges;
 			}
@@ -123,9 +119,9 @@ protected:
 		}
 
 
-		emit_output(OEIP_STAGE_INPUT, OEIP_COLSPACE_RGB888_RGB, buf);
+		emit_output(OEIP_STAGE_INPUT, OEIP_COLSPACE_RGB888_RGB, frame);
 
-		auto edge_cur = get_edge_buffer(buf);
+		auto edge_cur = get_edge_buffer(frame);
 		edge_cur.convertTo(edge_cur, CV_8U);
 
 		_edge_buffers_cursor = (_edge_buffers_cursor + 1) % total_edge_buffers;
@@ -142,7 +138,7 @@ protected:
 		// megjeloljuk azokat a pixeleket, amelyek a YCbCr kep Cb es Cr csatornajanak hisztogramjaiban
 		// benne vannak a ket major bin-ben
 		cv::Mat buf_ycrcb;
-		cvtColor(buf, buf_ycrcb, cv::COLOR_RGB2YCrCb);
+		cvtColor(frame, buf_ycrcb, cv::COLOR_RGB2YCrCb);
 		cv::Mat buf_ycrcb_channels[3];
 		cv::split(buf_ycrcb, buf_ycrcb_channels);
 
@@ -208,6 +204,18 @@ protected:
 		}
 
 		average_u8(_avg_subtitle_mask, subtitle_mask, _avg_subtitle_mask);
+
+		return true;
+	}
+
+	bool step_impl() {
+		cv::Mat buf;
+		bool has_output_callback = _cb_output != nullptr;
+
+		_video.read(buf);
+		bool ret = true;
+
+		ret &= make_subtitle_mask(buf);
 
 		emit_output(OEIP_STAGE_SUBTITLE_MASK, OEIP_COLSPACE_R8, _avg_subtitle_mask);
 
