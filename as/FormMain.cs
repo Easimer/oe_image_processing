@@ -22,6 +22,7 @@ namespace Net.Easimer.KAA.Front
         private void InitializeComponent()
         {
             this.btnPipeline = new System.Windows.Forms.Button();
+            this.btnInpaintingDemo = new System.Windows.Forms.Button();
             this.SuspendLayout();
             // 
             // btnPipeline
@@ -34,9 +35,20 @@ namespace Net.Easimer.KAA.Front
             this.btnPipeline.UseVisualStyleBackColor = true;
             this.btnPipeline.Click += new System.EventHandler(this.OpenVideoInPipelineView);
             // 
+            // btnInpaintingDemo
+            // 
+            this.btnInpaintingDemo.Location = new System.Drawing.Point(12, 41);
+            this.btnInpaintingDemo.Name = "btnInpaintingDemo";
+            this.btnInpaintingDemo.Size = new System.Drawing.Size(319, 23);
+            this.btnInpaintingDemo.TabIndex = 1;
+            this.btnInpaintingDemo.Text = "Inpainting demo";
+            this.btnInpaintingDemo.UseVisualStyleBackColor = true;
+            this.btnInpaintingDemo.Click += new System.EventHandler(this.BeginInpaintingDemo);
+            // 
             // FormMain
             // 
             this.ClientSize = new System.Drawing.Size(343, 371);
+            this.Controls.Add(this.btnInpaintingDemo);
             this.Controls.Add(this.btnPipeline);
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedDialog;
             this.Name = "FormMain";
@@ -60,6 +72,14 @@ namespace Net.Easimer.KAA.Front
                     new FormPipeline(oeip).Show();
                 }
             }
+        }
+
+        private Button btnInpaintingDemo;
+
+        private void BeginInpaintingDemo(object sender, EventArgs e)
+        {
+            var wnd = FormInpaint.Make();
+            wnd?.Show();
         }
     }
 }

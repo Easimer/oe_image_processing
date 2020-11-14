@@ -33,3 +33,11 @@ PAPI bool oeip_step(oeip_handle handle);
 
 PAPI bool oeip_register_stage_output_callback(oeip_handle handle, oeip_cb_output fun);
 PAPI bool oeip_register_stage_benchmark_callback(oeip_handle handle, oeip_cb_benchmark fun);
+
+// Image inpainting debug/demo API
+
+typedef struct oeip_inpainting_handle_ *oeip_inpainting_handle;
+
+PAPI oeip_inpainting_handle oeip_begin_inpainting(char const *path_source, char const *path_mask);
+PAPI void oeip_end_inpainting(oeip_inpainting_handle handle);
+PAPI void oeip_inpaint(oeip_inpainting_handle handle, void const **buffer, int *bytes, int *width, int *height, int *stride);

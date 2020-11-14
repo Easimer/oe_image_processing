@@ -12,14 +12,19 @@ set(SRC_LIB
 
     oeip.cpp
     oeip.h
+
+    image_inpainting.cpp
+    image_inpainting.h
 )
 
 set(SRC_FRONT
     App.config
     OEIP.cs
+    Inpainting.cs
     ImageConversion.cs
     FormMain.resx
     FormPipeLine.resx
+    FormInpaint.resx
     OutputControl.resx
 )
 
@@ -29,6 +34,8 @@ set(SRC_FRONT_GUI
     FormMain.Designer.cs
     FormPipeline.cs
     FormPipeline.Designer.cs
+    FormInpaint.cs
+    FormInpaint.Designer.cs
     OutputControl.cs
     OutputControl.Designer.cs
     Properties/AssemblyInfo.cs
