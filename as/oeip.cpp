@@ -209,11 +209,11 @@ protected:
 	}
 
 	bool step_impl() {
+		bool ret = true;
 		cv::Mat buf;
 		bool has_output_callback = _cb_output != nullptr;
 
 		_video.read(buf);
-		bool ret = true;
 
 		ret &= make_subtitle_mask(buf);
 
@@ -232,7 +232,7 @@ protected:
 			}
 		}
 
-		return true;
+		return ret;
 	}
 
 	void average_u8(cv::Mat const& lhs, cv::Mat const& rhs, cv::Mat& out) {
