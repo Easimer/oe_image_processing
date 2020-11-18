@@ -150,9 +150,10 @@ protected:
 
 		// megjeloljuk azokat a pixeleket, amelyek a YCbCr kep Cb es Cr csatornajanak hisztogramjaiban
 		// benne vannak a ket major bin-ben
-		cv::Mat buf_ycrcb;
+		cv::UMat buf_ycrcb;
 		cvtColor(frame, buf_ycrcb, cv::COLOR_RGB2YCrCb);
-		cv::Mat buf_ycrcb_channels[3];
+		// cv::UMat buf_ycrcb_channels[3];
+		std::vector<cv::UMat> buf_ycrcb_channels;
 		cv::split(buf_ycrcb, buf_ycrcb_channels);
 
 		cv::Mat buf_cr;
