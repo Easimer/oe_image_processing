@@ -234,7 +234,12 @@ protected:
 
 		emit_output(OEIP_STAGE_SUBTITLE_MASK, OEIP_COLSPACE_R8, _avg_subtitle_mask);
 
-		// oeip_inpaint_cvmat(_inpaint_res, buf, _avg_subtitle_mask);
+		cv::UMat buf_u, mask_u;
+		buf.copyTo(buf_u);
+		cv::resize(_avg_subtitle_mask, mask_u, buf.size());
+		oeip_inpaint_cvmat(_inpaint_res, buf_u, mask_u);
+
+		emit_output(OEIP_STAGE_OUTPUT, OEIP_COLSPACE_RGB888_RGB, _inpaint_res);
 
 		if (has_output_callback) {
 			for (int i = 0; i < OEIP_STAGE_OUTPUT + 1; i++) {
