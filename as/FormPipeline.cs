@@ -41,6 +41,9 @@ namespace Net.Easimer.KAA.Front
                 case Oeip.Stage.SubtitleMask:
                     ctl = imgSubtitleMask;
                     break;
+                case Oeip.Stage.Output:
+                    ctl = imgOutput;
+                    break;
                 default:
                     break;
             }
@@ -64,6 +67,7 @@ namespace Net.Easimer.KAA.Front
             this.imgEdgeCurrent = new Net.Easimer.KAA.Front.OutputControl();
             this.imgEdgeAccumulated = new Net.Easimer.KAA.Front.OutputControl();
             this.imgSubtitleMask = new Net.Easimer.KAA.Front.OutputControl();
+            this.imgOutput = new Net.Easimer.KAA.Front.OutputControl();
             this.toolStrip.SuspendLayout();
             this.SuspendLayout();
             // 
@@ -138,6 +142,15 @@ namespace Net.Easimer.KAA.Front
             this.imgSubtitleMask.Size = new System.Drawing.Size(296, 267);
             this.imgSubtitleMask.TabIndex = 5;
             // 
+            // imgOutput
+            // 
+            this.imgOutput.Location = new System.Drawing.Point(1220, 28);
+            this.imgOutput.Name = "imgOutput";
+            this.imgOutput.OutputImage = null;
+            this.imgOutput.OutputStageName = "Output";
+            this.imgOutput.Size = new System.Drawing.Size(296, 267);
+            this.imgOutput.TabIndex = 5;
+            // 
             // FormPipeline
             // 
             this.AutoScroll = true;
@@ -147,6 +160,7 @@ namespace Net.Easimer.KAA.Front
             this.Controls.Add(this.imgEdgeCurrent);
             this.Controls.Add(this.imgInput);
             this.Controls.Add(this.toolStrip);
+            this.Controls.Add(this.imgOutput);
             this.Name = "FormPipeline";
             this.ShowIcon = false;
             this.Text = "Pipeline";
@@ -162,6 +176,7 @@ namespace Net.Easimer.KAA.Front
         private ToolStrip toolStrip;
         private ToolStripButton btnStart;
         private ToolStripButton btnStop;
+        private OutputControl imgOutput;
         private OutputControl imgEdgeCurrent;
         private OutputControl imgEdgeAccumulated;
         private OutputControl imgInput;
