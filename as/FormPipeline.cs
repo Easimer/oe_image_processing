@@ -149,7 +149,7 @@ namespace Net.Easimer.KAA.Front
             this.imgOutput.OutputImage = null;
             this.imgOutput.OutputStageName = "Output";
             this.imgOutput.Size = new System.Drawing.Size(296, 267);
-            this.imgOutput.TabIndex = 5;
+            this.imgOutput.TabIndex = 6;
             // 
             // FormPipeline
             // 
