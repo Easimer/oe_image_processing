@@ -19,6 +19,20 @@ namespace Net.Easimer.KAA.Front
             API.End(_handle);
         }
 
+        public Bitmap Step()
+        {
+            IntPtr buffer = IntPtr.Zero;
+            int bytes = 0, width = 0, height = 0, stride = 0;
+            API.Inpaint(_handle, ref buffer, ref bytes, ref width, ref height, ref stride);
+
+            if(buffer == IntPtr.Zero)
+            {
+                return null;
+            }
+
+            return ImageConversion.CreateRGB(buffer, width, height, stride);
+        }
+
         public static InpaintingSession Make(string pathSource, string pathMask)
         {
             var handle = API.Begin(pathSource, pathMask);

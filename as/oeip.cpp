@@ -3,10 +3,10 @@
 #include <opencv2/videoio.hpp>
 #include <opencv2/imgproc.hpp>
 
+#include "image_inpainting.h"
+
 // TODO: This should be configurable by the user
 static constexpr int total_edge_buffers = 4;
-
-#define UMat Mat
 
 struct Edge_Buffers {
 	Edge_Buffers(int n, cv::Size const& size) {
@@ -54,6 +54,12 @@ static void two_major_bins(cv::Mat const& H, int* idx0, int* idx1) {
 	*idx1 = max1_idx;
 }
 
+static void two_major_bins(cv::UMat const &H, int *idx0, int *idx1) {
+	cv::Mat buf;
+	H.copyTo(buf);
+	two_major_bins(buf, idx0, idx1);
+}
+
 class OEIP : public IOEIP {
 public:
 	OEIP(char const* pathToVideo) :
@@ -94,11 +100,15 @@ protected:
 			cv::UMat eb(size, CV_16U);
 			_edge_buffers[i].convertTo(eb, CV_16U);
 			auto w = get_edge_buffer_weight(_edge_buffers_cursor, total_edge_buffers, i);
-			acc += w * eb;
+			// acc += w * eb;
+			cv::scaleAdd(acc, w, eb, acc);
 		}
 
 		auto const sum_of_weights = total_edge_buffers * (total_edge_buffers + 1) / 2;
-		cv::UMat avg_tmp = acc / sum_of_weights;
+		
+		auto avg_tmp = cv::UMat::zeros(acc.rows, acc.cols, acc.type());
+		cv::scaleAdd(acc, 1 / (double)sum_of_weights, avg_tmp, avg_tmp);
+		// cv::UMat avg_tmp = acc / sum_of_weights;
 
 		avg_tmp.convertTo(avg, CV_8U);
 		threshold(avg, avg_bin, 252, 255, cv::THRESH_BINARY);
@@ -132,8 +142,11 @@ protected:
 		cv::UMat edge_cur_bin;
 		cv::threshold(edge_avg, edge_cur_bin, 127, 255, CV_8U);
 
-		emit_output(OEIP_STAGE_ACCUMULATED_EDGE_BUFFER, OEIP_COLSPACE_R8, edge_cur_bin);
+		cv::Mat dbg_edge_avg, dbg_edge_cur_bin;
+		edge_avg.copyTo(dbg_edge_avg);
+		edge_cur_bin.copyTo(dbg_edge_cur_bin);
 
+		emit_output(OEIP_STAGE_ACCUMULATED_EDGE_BUFFER, OEIP_COLSPACE_R8, edge_cur_bin);
 
 		// megjeloljuk azokat a pixeleket, amelyek a YCbCr kep Cb es Cr csatornajanak hisztogramjaiban
 		// benne vannak a ket major bin-ben
@@ -175,15 +188,17 @@ protected:
 		cv::UMat thresh_cr0, thresh_cr1;
 		cv::inRange(buf_ycrcb_channels[1], cv::Scalar(cr0), cv::Scalar(cr0), thresh_cr0);
 		cv::inRange(buf_ycrcb_channels[1], cv::Scalar(cr1), cv::Scalar(cr1), thresh_cr1);
-		cv::UMat thresh_cr = cv::max(thresh_cr0, thresh_cr1);
+		cv::UMat thresh_cr;
+		cv::max(thresh_cr0, thresh_cr1, thresh_cr);
 
 		cv::UMat thresh_cb0, thresh_cb1;
 		cv::inRange(buf_ycrcb_channels[2], cv::Scalar(cb0), cv::Scalar(cb0), thresh_cb0);
 		cv::inRange(buf_ycrcb_channels[2], cv::Scalar(cb1), cv::Scalar(cb1), thresh_cb1);
-		cv::UMat thresh_cb = cv::max(thresh_cb0, thresh_cb1);
+		cv::UMat thresh_cb;
+		cv::max(thresh_cb0, thresh_cb1, thresh_cb);
 
 		cv::UMat thresh(thresh_cr.rows, thresh_cr.cols, CV_32F);
-		thresh = cv::max(thresh_cr, thresh_cb);
+		cv::max(thresh_cr, thresh_cb, thresh);
 
 		cv::UMat subtitle_mask;
 		cv::UMat thresh_blur3, avg_bin_blur3;
@@ -219,6 +234,8 @@ protected:
 
 		emit_output(OEIP_STAGE_SUBTITLE_MASK, OEIP_COLSPACE_R8, _avg_subtitle_mask);
 
+		// oeip_inpaint_cvmat(_inpaint_res, buf, _avg_subtitle_mask);
+
 		if (has_output_callback) {
 			for (int i = 0; i < OEIP_STAGE_OUTPUT + 1; i++) {
 				auto& buf = _output_buffers[i];
@@ -235,7 +252,7 @@ protected:
 		return ret;
 	}
 
-	void average_u8(cv::Mat const& lhs, cv::Mat const& rhs, cv::Mat& out) {
+	void average_u8(cv::UMat const& lhs, cv::UMat const& rhs, cv::UMat& out) {
 		cv::Mat acc(lhs.size(), CV_64F, cv::Scalar(0));
 		accumulate(lhs, acc);
 		accumulate(rhs, acc);
@@ -299,10 +316,15 @@ protected:
 
 			// auto w = get_edge_buffer_weight(temp_idx, total_edge_buffers, i);
 			auto w = 1;
-			acc += w * eb;
+			// acc += w * eb;
+			cv::scaleAdd(acc, w, eb, acc);
 		}
 
-		return acc / total_edge_buffers;
+		auto avg_tmp = cv::UMat::zeros(acc.rows, acc.cols, acc.type());
+		cv::scaleAdd(acc, 1 / (double)total_edge_buffers, avg_tmp, avg_tmp);
+		// cv::UMat avg_tmp = acc / sum_of_weights;
+		// return acc / total_edge_buffers;
+		return avg_tmp;
 	}
 
 private:
@@ -318,6 +340,7 @@ private:
 	oeip_buffer_color_space _output_buffer_formats[oeip_stage::OEIP_STAGE_OUTPUT + 1];
 
 	cv::UMat _avg_subtitle_mask;
+	cv::Mat _inpaint_res;
 };
 
 std::unique_ptr<IOEIP> make_oeip(char const* pathToVideo) {

@@ -167,6 +167,11 @@ namespace Net.Easimer.KAA.Front
         {
             var task = Task.Run(() =>
             {
+                var result = _session.Step();
+                BeginInvoke((MethodInvoker) delegate()
+                {
+                    DisplayResultImage(result);
+                });
             });
 
             await Task.WhenAll(task);
