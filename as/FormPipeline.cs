@@ -63,10 +63,10 @@ namespace Net.Easimer.KAA.Front
             this.toolStrip = new System.Windows.Forms.ToolStrip();
             this.btnStart = new System.Windows.Forms.ToolStripButton();
             this.btnStop = new System.Windows.Forms.ToolStripButton();
-            this.imgInput = new Net.Easimer.KAA.Front.OutputControl();
-            this.imgEdgeCurrent = new Net.Easimer.KAA.Front.OutputControl();
-            this.imgEdgeAccumulated = new Net.Easimer.KAA.Front.OutputControl();
             this.imgSubtitleMask = new Net.Easimer.KAA.Front.OutputControl();
+            this.imgEdgeAccumulated = new Net.Easimer.KAA.Front.OutputControl();
+            this.imgEdgeCurrent = new Net.Easimer.KAA.Front.OutputControl();
+            this.imgInput = new Net.Easimer.KAA.Front.OutputControl();
             this.imgOutput = new Net.Easimer.KAA.Front.OutputControl();
             this.toolStrip.SuspendLayout();
             this.SuspendLayout();
@@ -83,7 +83,7 @@ namespace Net.Easimer.KAA.Front
             this.btnStop});
             this.toolStrip.Location = new System.Drawing.Point(0, 0);
             this.toolStrip.Name = "toolStrip";
-            this.toolStrip.Size = new System.Drawing.Size(1214, 25);
+            this.toolStrip.Size = new System.Drawing.Size(1526, 25);
             this.toolStrip.TabIndex = 1;
             this.toolStrip.Text = "toolStrip1";
             // 
@@ -106,23 +106,14 @@ namespace Net.Easimer.KAA.Front
             this.btnStop.Text = "toolStripButton1";
             this.btnStop.Click += new System.EventHandler(this.OnClickStop);
             // 
-            // imgInput
+            // imgSubtitleMask
             // 
-            this.imgInput.Location = new System.Drawing.Point(12, 28);
-            this.imgInput.Name = "imgInput";
-            this.imgInput.OutputImage = null;
-            this.imgInput.OutputStageName = "Input";
-            this.imgInput.Size = new System.Drawing.Size(296, 267);
-            this.imgInput.TabIndex = 2;
-            // 
-            // imgEdgeCurrent
-            // 
-            this.imgEdgeCurrent.Location = new System.Drawing.Point(314, 28);
-            this.imgEdgeCurrent.Name = "imgEdgeCurrent";
-            this.imgEdgeCurrent.OutputImage = null;
-            this.imgEdgeCurrent.OutputStageName = "Current edge buffer";
-            this.imgEdgeCurrent.Size = new System.Drawing.Size(296, 267);
-            this.imgEdgeCurrent.TabIndex = 3;
+            this.imgSubtitleMask.Location = new System.Drawing.Point(918, 28);
+            this.imgSubtitleMask.Name = "imgSubtitleMask";
+            this.imgSubtitleMask.OutputImage = null;
+            this.imgSubtitleMask.OutputStageName = "Subtitle mask";
+            this.imgSubtitleMask.Size = new System.Drawing.Size(296, 267);
+            this.imgSubtitleMask.TabIndex = 5;
             // 
             // imgEdgeAccumulated
             // 
@@ -133,14 +124,23 @@ namespace Net.Easimer.KAA.Front
             this.imgEdgeAccumulated.Size = new System.Drawing.Size(296, 267);
             this.imgEdgeAccumulated.TabIndex = 4;
             // 
-            // imgSubtitleMask
+            // imgEdgeCurrent
             // 
-            this.imgSubtitleMask.Location = new System.Drawing.Point(918, 28);
-            this.imgSubtitleMask.Name = "imgSubtitleMask";
-            this.imgSubtitleMask.OutputImage = null;
-            this.imgSubtitleMask.OutputStageName = "Subtitle mask";
-            this.imgSubtitleMask.Size = new System.Drawing.Size(296, 267);
-            this.imgSubtitleMask.TabIndex = 5;
+            this.imgEdgeCurrent.Location = new System.Drawing.Point(314, 28);
+            this.imgEdgeCurrent.Name = "imgEdgeCurrent";
+            this.imgEdgeCurrent.OutputImage = null;
+            this.imgEdgeCurrent.OutputStageName = "Current edge buffer";
+            this.imgEdgeCurrent.Size = new System.Drawing.Size(296, 267);
+            this.imgEdgeCurrent.TabIndex = 3;
+            // 
+            // imgInput
+            // 
+            this.imgInput.Location = new System.Drawing.Point(12, 28);
+            this.imgInput.Name = "imgInput";
+            this.imgInput.OutputImage = null;
+            this.imgInput.OutputStageName = "Input";
+            this.imgInput.Size = new System.Drawing.Size(296, 267);
+            this.imgInput.TabIndex = 2;
             // 
             // imgOutput
             // 
@@ -154,7 +154,7 @@ namespace Net.Easimer.KAA.Front
             // FormPipeline
             // 
             this.AutoScroll = true;
-            this.ClientSize = new System.Drawing.Size(922, 337);
+            this.ClientSize = new System.Drawing.Size(1526, 337);
             this.Controls.Add(this.imgSubtitleMask);
             this.Controls.Add(this.imgEdgeAccumulated);
             this.Controls.Add(this.imgEdgeCurrent);
