@@ -23,6 +23,7 @@ namespace Net.Easimer.KAA.Front
         {
             this.btnPipeline = new System.Windows.Forms.Button();
             this.btnInpaintingDemo = new System.Windows.Forms.Button();
+            this.btnProcessVideo = new System.Windows.Forms.Button();
             this.SuspendLayout();
             // 
             // btnPipeline
@@ -45,9 +46,20 @@ namespace Net.Easimer.KAA.Front
             this.btnInpaintingDemo.UseVisualStyleBackColor = true;
             this.btnInpaintingDemo.Click += new System.EventHandler(this.BeginInpaintingDemo);
             // 
+            // btnProcessVideo
+            // 
+            this.btnProcessVideo.Location = new System.Drawing.Point(12, 70);
+            this.btnProcessVideo.Name = "btnProcessVideo";
+            this.btnProcessVideo.Size = new System.Drawing.Size(319, 23);
+            this.btnProcessVideo.TabIndex = 2;
+            this.btnProcessVideo.Text = "Process video";
+            this.btnProcessVideo.UseVisualStyleBackColor = true;
+            this.btnProcessVideo.Click += new System.EventHandler(this.ProcessVideo);
+            // 
             // FormMain
             // 
             this.ClientSize = new System.Drawing.Size(343, 371);
+            this.Controls.Add(this.btnProcessVideo);
             this.Controls.Add(this.btnInpaintingDemo);
             this.Controls.Add(this.btnPipeline);
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedDialog;
@@ -79,6 +91,14 @@ namespace Net.Easimer.KAA.Front
         private void BeginInpaintingDemo(object sender, EventArgs e)
         {
             var wnd = FormInpaint.Make();
+            wnd?.Show();
+        }
+
+        private Button btnProcessVideo;
+
+        private void ProcessVideo(object sender, EventArgs e)
+        {
+            var wnd = FormProcess.Make();
             wnd?.Show();
         }
     }

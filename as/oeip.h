@@ -11,19 +11,25 @@ public:
 		register_stage_output_callback_impl(fun);
 	}
 
-	void register_stage_benchmark_callback(oeip_cb_benchmark fun) {
-		register_stage_benchmark_callback_impl(fun);
+	void register_progress_callback(oeip_cb_progress fun) {
+		register_progress_callback_impl(fun);
 	}
 
 	bool step() {
 		return step_impl();
 	}
+
+	bool process() {
+		return process_impl();
+	}
 	
 protected:
 	virtual void register_stage_output_callback_impl(oeip_cb_output fun) = 0;
-	virtual void register_stage_benchmark_callback_impl(oeip_cb_benchmark fun) = 0;
+	virtual void register_progress_callback_impl(oeip_cb_progress fun) = 0;
 
 	virtual bool step_impl() = 0;
+	virtual bool process_impl() = 0;
 };
 
-std::unique_ptr<IOEIP> make_oeip(char const* pathToVideo);
+std::unique_ptr<IOEIP> make_oeip(char const *pathToInput);
+std::unique_ptr<IOEIP> make_oeip(char const *pathToInput, char const *pathToOutput);

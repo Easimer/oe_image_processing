@@ -8,13 +8,13 @@ struct oeip_handle_ {
 	std::unique_ptr<IOEIP> oeip;
 };
 
-PAPI oeip_handle oeip_open_video(char const* path) {
-	if (path == nullptr) {
+PAPI oeip_handle oeip_open_video(char const *pathToInput, char const *pathToOutput) {
+	if (pathToInput == nullptr) {
 		return nullptr;
 	}
 
 	auto handle = new oeip_handle_;
-	handle->oeip = make_oeip(path);
+	handle->oeip = make_oeip(pathToInput, pathToOutput);
 
 	if (handle->oeip == nullptr) {
 		delete handle;
@@ -41,7 +41,25 @@ PAPI bool oeip_step(oeip_handle handle) {
 
 	assert(handle->oeip != nullptr);
 
+	if (handle->oeip == nullptr) {
+		return false;
+	}
+
 	return handle->oeip->step();
+}
+
+PAPI bool oeip_process(oeip_handle handle) {
+	if (handle == nullptr) {
+		return false;
+	}
+
+	assert(handle->oeip != nullptr);
+
+	if (handle->oeip == nullptr) {
+		return false;
+	}
+
+	return handle->oeip->process();
 }
 
 PAPI bool oeip_register_stage_output_callback(oeip_handle handle, oeip_cb_output fun) {
@@ -59,7 +77,7 @@ PAPI bool oeip_register_stage_output_callback(oeip_handle handle, oeip_cb_output
 	return true;
 }
 
-PAPI bool oeip_register_stage_benchmark_callback(oeip_handle handle, oeip_cb_benchmark fun) {
+PAPI bool oeip_register_progress_callback(oeip_handle handle, oeip_cb_progress fun) {
 	if (handle == nullptr) {
 		return false;
 	}
@@ -70,6 +88,6 @@ PAPI bool oeip_register_stage_benchmark_callback(oeip_handle handle, oeip_cb_ben
 		return false;
 	}
 
-	handle->oeip->register_stage_benchmark_callback(fun);
+	handle->oeip->register_progress_callback(fun);
 	return true;
 }

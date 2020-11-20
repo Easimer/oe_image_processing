@@ -4,7 +4,8 @@ EXPORTS
     oeip_close_video                        @2
     oeip_step                               @3
     oeip_register_stage_output_callback     @4
-    oeip_register_stage_benchmark_callback  @5
+    oeip_register_progress_callback         @5
     oeip_begin_inpainting                   @6
     oeip_end_inpainting                     @7
     oeip_inpaint                            @8
+    oeip_process                            @9

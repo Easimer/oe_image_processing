@@ -25,10 +25,12 @@ set(SRC_FRONT
     App.config
     OEIP.cs
     Inpainting.cs
+    ProcessingSession.cs
     ImageConversion.cs
     FormMain.resx
     FormPipeLine.resx
     FormInpaint.resx
+    FormProcess.resx
     OutputControl.resx
 )
 
@@ -40,6 +42,8 @@ set(SRC_FRONT_GUI
     FormPipeline.Designer.cs
     FormInpaint.cs
     FormInpaint.Designer.cs
+    FormProcess.cs
+    FormProcess.Designer.cs
     OutputControl.cs
     OutputControl.Designer.cs
     Properties/AssemblyInfo.cs

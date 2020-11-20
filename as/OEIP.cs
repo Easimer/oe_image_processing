@@ -10,21 +10,15 @@ namespace Net.Easimer.KAA.Front
         private IntPtr _handle;
         private Dictionary<Stage, Bitmap> _outputs;
         private OeipCApi.OutputCallback _cb_output;
-        private OeipCApi.BenchmarkCallback _cb_benchmark;
-
-        public Dictionary<Stage, uint> BenchmarkData { get; private set; }
 
         protected Oeip(IntPtr handle)
         {
             _handle = handle;
             _outputs = new Dictionary<Stage, Bitmap>();
-            BenchmarkData = new Dictionary<Stage, uint>();
 
             // "Pinneljuk" a delegate-et hogy ne GC-zodjon mikozben a lib meg pointert tarol ra
             _cb_output = StageOutputCallback;
             OeipCApi.RegisterStageOutputCallback(_handle, _cb_output);
-            _cb_benchmark = StageBenchmarkCallback;
-            OeipCApi.RegisterStageBenchmarkCallback(_handle, _cb_benchmark);
         }
 
         public static Oeip Create(string pathToVideoFile)
@@ -55,8 +49,6 @@ namespace Net.Easimer.KAA.Front
 
         public bool Step()
         {
-            BenchmarkData.Clear();
-
             var res = OeipCApi.Step(_handle);
 
             foreach(var kv in _outputs)
@@ -100,11 +92,6 @@ namespace Net.Easimer.KAA.Front
             }
         }
 
-        protected void StageBenchmarkCallback(Stage stage, uint microsecs)
-        {
-            BenchmarkData.Add(stage, microsecs);
-        }
-
         public event OutputCallback StageHasOutput;
 
         public enum Stage
@@ -135,10 +122,9 @@ namespace Net.Easimer.KAA.Front
         private static class OeipCApi
         {
             public delegate void OutputCallback(Stage stage, BufferColorSpace cs, IntPtr buffer, int bytes, int width, int height, int stride);
-            public delegate void BenchmarkCallback(Stage stage, uint microsecs);
 
             [DllImport("core.dll", EntryPoint = "oeip_open_video")]
-            public static extern IntPtr OpenVideo(string path);
+            public static extern IntPtr OpenVideo(string pathInput, string pathOutput = null);
 
             [DllImport("core.dll", EntryPoint = "oeip_close_video")]
             public static extern void CloseVideo(IntPtr handle);
@@ -148,9 +134,6 @@ namespace Net.Easimer.KAA.Front
 
             [DllImport("core.dll", EntryPoint = "oeip_register_stage_output_callback")]
             public static extern bool RegisterStageOutputCallback(IntPtr handle, OutputCallback fun);
-
-            [DllImport("core.dll", EntryPoint = "oeip_register_stage_benchmark_callback")]
-            public static extern bool RegisterStageBenchmarkCallback(IntPtr handle, BenchmarkCallback fun);
         }
     }
 }

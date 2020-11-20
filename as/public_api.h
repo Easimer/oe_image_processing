@@ -23,16 +23,31 @@ enum oeip_buffer_color_space : int {
     OEIP_COLSPACE_RGB888_UNSPEC
 };
 
-using oeip_cb_output = void (*)(oeip_stage stage, oeip_buffer_color_space cs, void const *buffer, int bytes, int width, int height, int stride);
-using oeip_cb_benchmark = void (*)(oeip_stage stage, unsigned microsecs);
+struct oeip_progress_info {
+    int current_frame;
+    int total_frames;
+};
 
-PAPI oeip_handle oeip_open_video(char const *path);
+using oeip_cb_output = void (*)(oeip_stage stage, oeip_buffer_color_space cs, void const *buffer, int bytes, int width, int height, int stride);
+using oeip_cb_progress = void (*)(struct oeip_progress_info const *progress);
+
+PAPI oeip_handle oeip_open_video(char const *pathToInput, char const *pathToOutput);
 PAPI void oeip_close_video(oeip_handle handle);
 
+// Feldolgoz egy kepkockat a kimenetbol.
+// - Az elkeszult kepkocka nem kerul kiirasba fajlba.
+// - A Stage Output Callback-ek meghivasra kerulnek.
+// - A folyamat sikeressegevel ter vissza.
 PAPI bool oeip_step(oeip_handle handle);
 
+// Feldolgozza az egesz bemenetet es kiirja az elkeszult videot a kimeneti fajlba.
+// - A Stage Output Callback-ek NEM kerulnek meghivasra!
+// - A Progress Callback meghivasra kerul egy-egy kepkocka feldolgozasa utan.
+// - A folyamat sikeressegevel ter vissza.
+PAPI bool oeip_process(oeip_handle handle);
+
 PAPI bool oeip_register_stage_output_callback(oeip_handle handle, oeip_cb_output fun);
-PAPI bool oeip_register_stage_benchmark_callback(oeip_handle handle, oeip_cb_benchmark fun);
+PAPI bool oeip_register_progress_callback(oeip_handle handle, oeip_cb_progress fun);
 
 // Image inpainting debug/demo API
 

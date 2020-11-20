@@ -1,8 +1,10 @@
-#include "oeip.h"
+#include <optional>
+
 #include <opencv2/highgui.hpp>
 #include <opencv2/videoio.hpp>
 #include <opencv2/imgproc.hpp>
 
+#include "oeip.h"
 #include "image_inpainting.h"
 
 // TODO: This should be configurable by the user
@@ -60,13 +62,20 @@ static void two_major_bins(cv::UMat const &H, int *idx0, int *idx1) {
 	two_major_bins(buf, idx0, idx1);
 }
 
+// Asszertaljuk, hogy P implikalja Q-t
+#define assert_implies(p, q) assert(!(p) || (q))
+
 class OEIP : public IOEIP {
 public:
-	OEIP(char const* pathToVideo) :
-		_video(cv::VideoCapture(pathToVideo)),
+	OEIP(cv::VideoCapture &&video, std::optional<cv::VideoWriter> &&output) :
+		_video(std::move(video)),
+		_output(std::move(output)),
 		_cb_output(nullptr),
-		_cb_benchmark(nullptr)
+		_cb_progress(nullptr)
 	{
+		assert(_video.isOpened());
+		assert_implies(output.has_value(), output->isOpened());
+
 		auto width = (int)_video.get(cv::CAP_PROP_FRAME_WIDTH);
 		auto height = (int)_video.get(cv::CAP_PROP_FRAME_HEIGHT);
 		auto fps = round(_video.get(cv::CAP_PROP_FPS));
@@ -78,6 +87,8 @@ public:
 			cv::Mat tmp;
 			_edge_buffers[i] = cv::UMat::zeros(height, width, CV_8U);
 		}
+
+		_total_frames = (int)_video.get(cv::CAP_PROP_FRAME_COUNT);
 	}
 
 protected:
@@ -85,8 +96,10 @@ protected:
 		_cb_output = fun;
 	}
 
-	void register_stage_benchmark_callback_impl(oeip_cb_benchmark fun) override {
-		_cb_benchmark = fun;
+	void register_progress_callback_impl(oeip_cb_progress fun) override {
+		_cb_progress = fun;
+		struct oeip_progress_info inf = { 0, _total_frames };
+		_cb_progress(&inf);
 	}
 
 	bool _init = false;
@@ -224,7 +237,7 @@ protected:
 		return true;
 	}
 
-	bool step_impl() {
+	bool step_impl() override {
 		bool ret = true;
 		cv::Mat buf;
 		bool has_output_callback = _cb_output != nullptr;
@@ -256,6 +269,33 @@ protected:
 		}
 
 		return ret;
+	}
+
+	bool process_impl() override {
+		cv::Mat buf;
+
+		while (_video.read(buf)) {
+			if (!make_subtitle_mask(buf)) {
+				return false;
+			}
+
+            cv::UMat buf_u, mask_u;
+            buf.copyTo(buf_u);
+            cv::resize(_avg_subtitle_mask, mask_u, buf.size());
+            oeip_inpaint_cvmat(_inpaint_res, buf_u, mask_u);
+
+			if (_output.has_value()) {
+				_output->write(_inpaint_res);
+			}
+
+			if (_cb_progress != nullptr) {
+				auto frameIdx = (int)_video.get(cv::CAP_PROP_POS_FRAMES);
+				struct oeip_progress_info inf = { frameIdx, _total_frames };
+				_cb_progress(&inf);
+			}
+		}
+
+		return true;
 	}
 
 	void average_u8(cv::UMat const& lhs, cv::UMat const& rhs, cv::UMat& out) {
@@ -291,17 +331,6 @@ protected:
 		auto edges = detect_edges(buf);
 		emit_output(OEIP_STAGE_CURRENT_EDGE_BUFFER, OEIP_COLSPACE_R8, edges);
 		return edges;
-		/*
-		edges.convertTo(edges, CV_16U);
-		auto prev = prev_edge_buffer();
-		prev.convertTo(prev, CV_16U);
-
-		cv::UMat e_i = edges + prev;
-		cv::UMat avg = average_edge_buffers(e_i);
-		cv::UMat e_i_2 = e_i - avg;
-
-		return e_i_2;
-		*/
 	}
 
 	template<typename InputArray>
@@ -335,8 +364,9 @@ protected:
 
 private:
 	cv::VideoCapture _video;
+	std::optional<cv::VideoWriter> _output;
 	oeip_cb_output _cb_output;
-	oeip_cb_benchmark _cb_benchmark;
+	oeip_cb_progress _cb_progress;
 
 	cv::UMat _mask_subtitle_bottom;
 	cv::UMat _edge_buffers[total_edge_buffers];
@@ -347,8 +377,34 @@ private:
 
 	cv::UMat _avg_subtitle_mask;
 	cv::Mat _inpaint_res;
+
+	int _total_frames;
 };
 
-std::unique_ptr<IOEIP> make_oeip(char const* pathToVideo) {
-	return std::make_unique<OEIP>(pathToVideo);
+std::unique_ptr<IOEIP> make_oeip(char const *pathToInput) {
+	return make_oeip(pathToInput, nullptr);
+}
+
+std::unique_ptr<IOEIP> make_oeip(char const *pathToInput, char const *pathToOutput) {
+	auto video = cv::VideoCapture(pathToInput);
+	if (!video.isOpened()) {
+		return nullptr;
+	}
+
+	std::optional<cv::VideoWriter> writer;
+
+	if (pathToOutput != nullptr) {
+		double width = video.get(cv::CAP_PROP_FRAME_WIDTH);
+		double height = video.get(cv::CAP_PROP_FRAME_HEIGHT);
+		auto size = cv::Size(width, height);
+		double fps = video.get(cv::CAP_PROP_FPS);
+		bool isColor = video.get(cv::CAP_PROP_MONOCHROME) > 0.0 ? false : true;
+		writer = cv::VideoWriter(pathToOutput, cv::VideoWriter::fourcc('X', '2', '6', '4'), fps, size, isColor);
+
+		if (writer.has_value() && !writer->isOpened()) {
+			return nullptr;
+		}
+	}
+
+	return std::make_unique<OEIP>(std::move(video), std::move(writer));
 }
