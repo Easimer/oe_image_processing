@@ -155,10 +155,6 @@ protected:
 		cv::UMat edge_cur_bin;
 		cv::threshold(edge_avg, edge_cur_bin, 127, 255, CV_8U);
 
-		cv::Mat dbg_edge_avg, dbg_edge_cur_bin;
-		edge_avg.copyTo(dbg_edge_avg);
-		edge_cur_bin.copyTo(dbg_edge_cur_bin);
-
 		emit_output(OEIP_STAGE_ACCUMULATED_EDGE_BUFFER, OEIP_COLSPACE_R8, edge_cur_bin);
 
 		// megjeloljuk azokat a pixeleket, amelyek a YCbCr kep Cb es Cr csatornajanak hisztogramjaiban
@@ -169,19 +165,24 @@ protected:
 		std::vector<cv::UMat> buf_ycrcb_channels;
 		cv::split(buf_ycrcb, buf_ycrcb_channels);
 
-		cv::Mat buf_cr;
-		cv::Mat buf_cb;
+		cv::UMat buf_cr;
+		cv::UMat buf_cb;
 
 		// TODO: leftover kod? minek csinalunk masolatot?
 		buf_ycrcb_channels[1].copyTo(buf_cr);
 		buf_ycrcb_channels[2].copyTo(buf_cb);
 
-		cv::Mat mask;
+		cv::UMat mask;
 
 		cv::bitwise_and(_mask_subtitle_bottom, edge_cur_bin, mask);
 
 		cv::bitwise_and(buf_ycrcb_channels[1], mask, buf_cr);
 		cv::bitwise_and(buf_ycrcb_channels[2], mask, buf_cb);
+
+		cv::Mat buf_cr_loc, buf_cb_loc;
+
+		buf_cr.copyTo(buf_cr_loc);
+		buf_cb.copyTo(buf_cb_loc);
 
 		int histSize = 256;
 		float range[] = { 0, 256 };
@@ -190,8 +191,8 @@ protected:
 		cv::UMat cr_hist, cb_hist;
 
 		// Letrehozzuk a kepkocka hisztogramjat a Cr es Cb csatornakban
-		cv::calcHist(&buf_cr, 1, 0, mask, cr_hist, 1, &histSize, &histRange, true, false);
-		cv::calcHist(&buf_cb, 1, 0, mask, cb_hist, 1, &histSize, &histRange, true, false);
+		cv::calcHist(&buf_cr_loc, 1, 0, mask, cr_hist, 1, &histSize, &histRange, true, false);
+		cv::calcHist(&buf_cb_loc, 1, 0, mask, cb_hist, 1, &histSize, &histRange, true, false);
 
 		// Megkeressuk a ket foszint mindegyik csatornaban
 		int cr0, cr1;
@@ -221,8 +222,10 @@ protected:
 		cv::pyrDown(edge_cur_bin, edge_cur_bin, cv::Size(edge_cur_bin.cols / 2, edge_cur_bin.rows / 2));
 		cv::pyrDown(thresh, thresh, cv::Size(thresh.cols / 2, thresh.rows / 2));
 
-		cv::GaussianBlur(thresh, thresh_blur3, { 3, 3 }, 0.0f);
-		cv::GaussianBlur(edge_cur_bin, avg_bin_blur3, { 3, 3 }, 0.0f);
+		// cv::GaussianBlur(thresh, thresh_blur3, { 3, 3 }, 0.0f);
+		cv::boxFilter(thresh, thresh_blur3, thresh.type(), { 3, 3 });
+		// cv::GaussianBlur(edge_cur_bin, avg_bin_blur3, { 3, 3 }, 0.0f);
+		cv::boxFilter(edge_cur_bin, avg_bin_blur3, edge_cur_bin.type(), { 3, 3 });
 
 		cv::threshold(avg_bin_blur3, avg_bin_blur3, 0, 255, cv::THRESH_BINARY);
 		cv::threshold(thresh_blur3, thresh_blur3, 0, 255, cv::THRESH_BINARY);
@@ -299,7 +302,7 @@ protected:
 	}
 
 	void average_u8(cv::UMat const& lhs, cv::UMat const& rhs, cv::UMat& out) {
-		cv::Mat acc(lhs.size(), CV_64F, cv::Scalar(0));
+		cv::UMat acc(lhs.size(), CV_64F, cv::Scalar(0));
 		accumulate(lhs, acc);
 		accumulate(rhs, acc);
 		acc.convertTo(out, CV_8U, 1 / 2.0);
@@ -309,7 +312,8 @@ protected:
 		cv::UMat src, blurred, blurred_gray;
 
 		buf.copyTo(src);
-		GaussianBlur(src, blurred, cv::Size(3, 3), 0, 0, cv::BORDER_DEFAULT);
+		// GaussianBlur(src, blurred, cv::Size(3, 3), 0, 0, cv::BORDER_DEFAULT);
+		boxFilter(src, blurred, src.type(), { 3, 3 });
 		cvtColor(blurred, blurred_gray, cv::COLOR_BGR2GRAY);
 
 		cv::UMat grad_x, grad_y, grad;
