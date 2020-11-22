@@ -23,7 +23,7 @@ set(SRC_LIB
 
 set(SRC_FRONT
     App.config
-    Inpainting.cs
+    InpaintingSession.cs
     ProcessingSession.cs
     PipelineDemoSession.cs
     ImageConversion.cs
