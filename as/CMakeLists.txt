@@ -23,9 +23,9 @@ set(SRC_LIB
 
 set(SRC_FRONT
     App.config
-    OEIP.cs
     Inpainting.cs
     ProcessingSession.cs
+    PipelineDemoSession.cs
     ImageConversion.cs
     FormMain.resx
     FormPipeLine.resx

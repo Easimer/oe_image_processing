@@ -14,9 +14,9 @@ namespace Net.Easimer.KAA.Front
 {
     partial class FormPipeline : Form
     {
-        private Oeip _oeip;
+        private PipelineDemoSession _oeip;
 
-        public FormPipeline(Oeip oeip)
+        public FormPipeline(PipelineDemoSession oeip)
         {
             InitializeComponent();
             _oeip = oeip;
@@ -24,24 +24,24 @@ namespace Net.Easimer.KAA.Front
             _oeip.StageHasOutput += Output;
         }
 
-        private void Output(Oeip.Stage stage, Bitmap buf)
+        private void Output(PipelineDemoSession.Stage stage, Bitmap buf)
         {
             OutputControl ctl = null;
             switch(stage)
             {
-                case Oeip.Stage.Input:
+                case PipelineDemoSession.Stage.Input:
                     ctl = imgInput;
                     break;
-                case Oeip.Stage.CurrentEdgeBuffer:
+                case PipelineDemoSession.Stage.CurrentEdgeBuffer:
                     ctl = imgEdgeCurrent;
                     break;
-                case Oeip.Stage.AccumulatedEdgeBuffer:
+                case PipelineDemoSession.Stage.AccumulatedEdgeBuffer:
                     ctl = imgEdgeAccumulated;
                     break;
-                case Oeip.Stage.SubtitleMask:
+                case PipelineDemoSession.Stage.SubtitleMask:
                     ctl = imgSubtitleMask;
                     break;
-                case Oeip.Stage.Output:
+                case PipelineDemoSession.Stage.Output:
                     ctl = imgOutput;
                     break;
                 default:

@@ -5,13 +5,13 @@ using System.Runtime.InteropServices;
 
 namespace Net.Easimer.KAA.Front
 {
-    class Oeip : IDisposable
+    class PipelineDemoSession : IDisposable
     {
         private IntPtr _handle;
         private Dictionary<Stage, Bitmap> _outputs;
         private OeipCApi.OutputCallback _cb_output;
 
-        protected Oeip(IntPtr handle)
+        protected PipelineDemoSession(IntPtr handle)
         {
             _handle = handle;
             _outputs = new Dictionary<Stage, Bitmap>();
@@ -21,14 +21,14 @@ namespace Net.Easimer.KAA.Front
             OeipCApi.RegisterStageOutputCallback(_handle, _cb_output);
         }
 
-        public static Oeip Create(string pathToVideoFile)
+        public static PipelineDemoSession Create(string pathToVideoFile)
         {
             try
             {
                 var handle = OeipCApi.OpenVideo(pathToVideoFile);
                 if (handle != IntPtr.Zero)
                 {
-                    return new Oeip(handle);
+                    return new PipelineDemoSession(handle);
                 }
             }
             catch(System.DllNotFoundException)

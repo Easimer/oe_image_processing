@@ -77,7 +77,7 @@ namespace Net.Easimer.KAA.Front
             var res = dlg.ShowDialog();
             if(res == DialogResult.OK)
             {
-                var oeip = Oeip.Create(dlg.FileName);
+                var oeip = PipelineDemoSession.Create(dlg.FileName);
 
                 if(oeip != null)
                 {
