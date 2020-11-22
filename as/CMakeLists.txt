@@ -23,29 +23,29 @@ set(SRC_LIB
 
 set(SRC_FRONT
     App.config
-    InpaintingSession.cs
-    ProcessingSession.cs
-    PipelineDemoSession.cs
-    ImageConversion.cs
-    FormMain.resx
-    FormPipeLine.resx
-    FormInpaint.resx
-    FormProcess.resx
-    OutputControl.resx
+    Session/InpaintingSession.cs
+    Session/ProcessingSession.cs
+    Session/PipelineDemoSession.cs
+    Utils/ImageConversion.cs
+    UI/FormMain.resx
+    UI/FormPipeLine.resx
+    UI/FormInpaint.resx
+    UI/FormProcess.resx
+    UI/OutputControl.resx
 )
 
 set(SRC_FRONT_GUI
     Program.cs
-    FormMain.cs
-    FormMain.Designer.cs
-    FormPipeline.cs
-    FormPipeline.Designer.cs
-    FormInpaint.cs
-    FormInpaint.Designer.cs
-    FormProcess.cs
-    FormProcess.Designer.cs
-    OutputControl.cs
-    OutputControl.Designer.cs
+    UI/FormMain.cs
+    UI/FormMain.Designer.cs
+    UI/FormPipeline.cs
+    UI/FormPipeline.Designer.cs
+    UI/FormInpaint.cs
+    UI/FormInpaint.Designer.cs
+    UI/FormProcess.cs
+    UI/FormProcess.Designer.cs
+    UI/OutputControl.cs
+    UI/OutputControl.Designer.cs
     Properties/AssemblyInfo.cs
     Properties/Resources.Designer.cs
     Properties/Resources.resx
