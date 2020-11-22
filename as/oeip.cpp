@@ -71,7 +71,8 @@ public:
 		_video(std::move(video)),
 		_output(std::move(output)),
 		_cb_output(nullptr),
-		_cb_progress(nullptr)
+		_cb_progress(nullptr),
+		_progress_callback_mask(0x00000000)
 	{
 		assert(_video.isOpened());
 		assert_implies(output.has_value(), output->isOpened());
@@ -102,8 +103,6 @@ protected:
 		_cb_progress(&inf);
 	}
 
-	bool _init = false;
-
 	void edge_buffers_average(cv::UMat& avg, cv::UMat& avg_bin, cv::Size const& size) {
 		// NOTE: maguk az edge bufferek 8U formatumban vannak es 0-255 normalizalt ertekek vannak benne
 		// Ezeket akkumulaljuk 16U matrixba
@@ -127,6 +126,7 @@ protected:
 		threshold(avg, avg_bin, 252, 255, cv::THRESH_BINARY);
 	}
 
+	// Felirat-maszk eloallitasa
 	// _avg_subtitle_mask-ba teszi a maszkot
 	bool make_subtitle_mask(cv::Mat const& frame) {
 		if (frame.empty()) {
@@ -194,11 +194,15 @@ protected:
 		cv::calcHist(&buf_cr_loc, 1, 0, mask, cr_hist, 1, &histSize, &histRange, true, false);
 		cv::calcHist(&buf_cb_loc, 1, 0, mask, cb_hist, 1, &histSize, &histRange, true, false);
 
-		// Megkeressuk a ket foszint mindegyik csatornaban
+		// Megkeressuk a ket foszint mindegyik csatornaban (kiveve luma)
 		int cr0, cr1;
 		int cb0, cb1;
 		two_major_bins(cr_hist, &cr0, &cr1);
 		two_major_bins(cb_hist, &cb0, &cb1);
+
+		// Csatornankent megjeloljuk azon pixeleket, amelyek a ket foszint veszik fel
+		// thresh_CH0 az elso, thresh_CH1 a masodik foszinhez tartozo maszk
+		// thresh_CH a fenti ket maszk unioja
 
 		cv::UMat thresh_cr0, thresh_cr1;
 		cv::inRange(buf_ycrcb_channels[1], cv::Scalar(cr0), cv::Scalar(cr0), thresh_cr0);
@@ -212,6 +216,7 @@ protected:
 		cv::UMat thresh_cb;
 		cv::max(thresh_cb0, thresh_cb1, thresh_cb);
 
+		// Vesszuk a ket thresh_CH maszk uniojat
 		cv::UMat thresh(thresh_cr.rows, thresh_cr.cols, CV_32F);
 		cv::max(thresh_cr, thresh_cb, thresh);
 
@@ -222,6 +227,7 @@ protected:
 		cv::pyrDown(edge_cur_bin, edge_cur_bin, cv::Size(edge_cur_bin.cols / 2, edge_cur_bin.rows / 2));
 		cv::pyrDown(thresh, thresh, cv::Size(thresh.cols / 2, thresh.rows / 2));
 
+		// A threshold maszkot es az edge buffert homalyositjuk, majd binarizaljuk
 		// cv::GaussianBlur(thresh, thresh_blur3, { 3, 3 }, 0.0f);
 		cv::boxFilter(thresh, thresh_blur3, thresh.type(), { 3, 3 });
 		// cv::GaussianBlur(edge_cur_bin, avg_bin_blur3, { 3, 3 }, 0.0f);
@@ -229,12 +235,17 @@ protected:
 
 		cv::threshold(avg_bin_blur3, avg_bin_blur3, 0, 255, cv::THRESH_BINARY);
 		cv::threshold(thresh_blur3, thresh_blur3, 0, 255, cv::THRESH_BINARY);
+
+		// Vesszuk a threshold maszk es az edge buffer uniojat
 		cv::bitwise_and(avg_bin_blur3, thresh_blur3, subtitle_mask);
 
 		if (_avg_subtitle_mask.empty()) {
+			// Ha meg nincs felirat-maszk (legelso kepkocka), akkor bemasoljuk a jelenlegit
+			// Az atlagszamitast nem rontja el, hiszen (x + x) / 2 == x
 			subtitle_mask.copyTo(_avg_subtitle_mask);
 		}
 
+		// Vesszuk a regi es az uj felirat-maszk atlagat
 		average_u8(_avg_subtitle_mask, subtitle_mask, _avg_subtitle_mask);
 
 		return true;
@@ -292,15 +303,23 @@ protected:
 			}
 
 			if (_cb_progress != nullptr) {
+				// Megprobaljuk meghivni a progress callback-et
 				auto frameIdx = (int)_video.get(cv::CAP_PROP_POS_FRAMES);
-				struct oeip_progress_info inf = { frameIdx, _total_frames };
-				_cb_progress(&inf);
+				if ((frameIdx & _progress_callback_mask) == 0) {
+					struct oeip_progress_info inf = { frameIdx, _total_frames };
+					_cb_progress(&inf);
+				}
 			}
 		}
 
 		return true;
 	}
 
+	void set_progress_callback_mask(unsigned mask) override {
+		_progress_callback_mask = mask;
+	}
+
+	// Veszi ket u8 matrix atlagat
 	void average_u8(cv::UMat const& lhs, cv::UMat const& rhs, cv::UMat& out) {
 		cv::UMat acc(lhs.size(), CV_64F, cv::Scalar(0));
 		accumulate(lhs, acc);
@@ -308,12 +327,13 @@ protected:
 		acc.convertTo(out, CV_8U, 1 / 2.0);
 	}
 
+	// Eldetektalast vegez el
+	// Gauss + Sobel
 	cv::UMat detect_edges(cv::Mat const& buf) {
 		cv::UMat src, blurred, blurred_gray;
 
 		buf.copyTo(src);
-		// GaussianBlur(src, blurred, cv::Size(3, 3), 0, 0, cv::BORDER_DEFAULT);
-		boxFilter(src, blurred, src.type(), { 3, 3 });
+		GaussianBlur(src, blurred, cv::Size(3, 3), 0, 0, cv::BORDER_DEFAULT);
 		cvtColor(blurred, blurred_gray, cv::COLOR_BGR2GRAY);
 
 		cv::UMat grad_x, grad_y, grad;
@@ -327,23 +347,23 @@ protected:
 		return grad;
 	}
 
-	cv::UMat& prev_edge_buffer() {
-		return _edge_buffers[_edge_buffers_cursor];
-	}
-
 	cv::UMat get_edge_buffer(cv::Mat const& buf) {
 		auto edges = detect_edges(buf);
 		emit_output(OEIP_STAGE_CURRENT_EDGE_BUFFER, OEIP_COLSPACE_R8, edges);
 		return edges;
 	}
 
+	// Eltarolja az elonezeti buffert
 	template<typename InputArray>
 	void emit_output(oeip_stage stage, oeip_buffer_color_space cs, InputArray mat) {
 		mat.copyTo(_output_buffers[stage]);
 		_output_buffer_formats[stage] = cs;
 	}
 
+	// Atlagolja az edge-buffereket.
 	cv::UMat average_edge_buffers() {
+		// NOTE: maguk az edge bufferek 8U formatumban vannak es 0-255 normalizalt ertekek vannak benne
+		// Ezeket akkumulaljuk 16U matrixba
 		cv::UMat acc = cv::UMat::zeros(_edge_buffers[0].size(), CV_16U);
 
 		auto temp_idx = (_edge_buffers_cursor + 1) % total_edge_buffers;
@@ -353,20 +373,17 @@ protected:
 			cv::UMat eb;
             _edge_buffers[i].convertTo(eb, CV_16U);
 
-			// auto w = get_edge_buffer_weight(temp_idx, total_edge_buffers, i);
 			auto w = 1;
-			// acc += w * eb;
 			cv::scaleAdd(acc, w, eb, acc);
 		}
 
 		auto avg_tmp = cv::UMat::zeros(acc.rows, acc.cols, acc.type());
 		cv::scaleAdd(acc, 1 / (double)total_edge_buffers, avg_tmp, avg_tmp);
-		// cv::UMat avg_tmp = acc / sum_of_weights;
-		// return acc / total_edge_buffers;
 		return avg_tmp;
 	}
 
 private:
+	bool _init = false;
 	cv::VideoCapture _video;
 	std::optional<cv::VideoWriter> _output;
 	oeip_cb_output _cb_output;
@@ -383,6 +400,7 @@ private:
 	cv::Mat _inpaint_res;
 
 	int _total_frames;
+	unsigned _progress_callback_mask;
 };
 
 std::unique_ptr<IOEIP> make_oeip(char const *pathToInput) {

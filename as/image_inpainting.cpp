@@ -5,7 +5,7 @@
 #include <opencv2/imgproc.hpp>
 #include <opencv2/photo.hpp>
 
-struct oeip_inpainting_handle_ {
+struct oeip_inpainting_handle {
     cv::UMat source, mask;
     cv::Mat res;
 };
@@ -14,7 +14,7 @@ void oeip_inpaint_cvmat(cv::Mat &res, cv::UMat const &src, cv::UMat const &mask)
     cv::inpaint(src, mask, res, 2.4, cv::INPAINT_NS);
 }
 
-PAPI oeip_inpainting_handle oeip_begin_inpainting(char const *path_source, char const *path_mask) {
+PAPI HOEIPINPAINT oeip_begin_inpainting(char const *path_source, char const *path_mask) {
     assert(path_source != nullptr);
     assert(path_mask != nullptr);
 
@@ -33,14 +33,14 @@ PAPI oeip_inpainting_handle oeip_begin_inpainting(char const *path_source, char 
         return nullptr;
     }
 
-    auto ret = new oeip_inpainting_handle_;
+    auto ret = new oeip_inpainting_handle;
     source.copyTo(ret->source);
     cv::extractChannel(mask, ret->mask, 0);
 
     return ret;
 }
 
-PAPI void oeip_end_inpainting(oeip_inpainting_handle handle) {
+PAPI void oeip_end_inpainting(HOEIPINPAINT handle) {
     assert(handle != nullptr);
 
     if (handle == nullptr) {
@@ -215,7 +215,7 @@ static void f(cv::Mat &res, cv::Mat const &src, cv::Mat const &mask) {
     }
 }
 
-PAPI void oeip_inpaint(oeip_inpainting_handle handle, void const **buffer, int *bytes, int *width, int *height, int *stride) {
+PAPI void oeip_inpaint(HOEIPINPAINT handle, void const **buffer, int *bytes, int *width, int *height, int *stride) {
     assert(handle != nullptr);
     assert(buffer != nullptr);
     assert(bytes != nullptr);

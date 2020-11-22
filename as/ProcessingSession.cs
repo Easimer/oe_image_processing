@@ -24,7 +24,7 @@ namespace Net.Easimer.KAA.Front
             _handle = handle;
 
             _cb_progress = new CAPI.ProgressCallback(ProgressCallback);
-            CAPI.RegisterProgressCallback(_handle, _cb_progress);
+            CAPI.RegisterProgressCallback(_handle, _cb_progress, 0x0F);
         }
 
         public bool Process()
@@ -70,7 +70,7 @@ namespace Net.Easimer.KAA.Front
             public static extern void CloseVideo(IntPtr handle);
 
             [DllImport("core.dll", EntryPoint = "oeip_register_progress_callback")]
-            public static extern bool RegisterProgressCallback(IntPtr handle, ProgressCallback fun);
+            public static extern bool RegisterProgressCallback(IntPtr handle, ProgressCallback fun, uint mask);
 
             [DllImport("core.dll", EntryPoint = "oeip_process")]
             public static extern bool Process(IntPtr handle);

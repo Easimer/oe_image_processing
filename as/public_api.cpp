@@ -4,16 +4,16 @@
 #include "oeip.h"
 #include <cassert>
 
-struct oeip_handle_ {
+struct oeip_handle {
 	std::unique_ptr<IOEIP> oeip;
 };
 
-PAPI oeip_handle oeip_open_video(char const *pathToInput, char const *pathToOutput) {
+PAPI HOEIP oeip_open_video(char const *pathToInput, char const *pathToOutput) {
 	if (pathToInput == nullptr) {
 		return nullptr;
 	}
 
-	auto handle = new oeip_handle_;
+	auto handle = new oeip_handle;
 	handle->oeip = make_oeip(pathToInput, pathToOutput);
 
 	if (handle->oeip == nullptr) {
@@ -24,7 +24,7 @@ PAPI oeip_handle oeip_open_video(char const *pathToInput, char const *pathToOutp
 	return handle;
 }
 
-PAPI void oeip_close_video(oeip_handle handle) {
+PAPI void oeip_close_video(HOEIP handle) {
 	if (handle == nullptr) {
 		return;
 	}
@@ -34,7 +34,7 @@ PAPI void oeip_close_video(oeip_handle handle) {
 	delete handle;
 }
 
-PAPI bool oeip_step(oeip_handle handle) {
+PAPI bool oeip_step(HOEIP handle) {
 	if (handle == nullptr) {
 		return false;
 	}
@@ -48,7 +48,7 @@ PAPI bool oeip_step(oeip_handle handle) {
 	return handle->oeip->step();
 }
 
-PAPI bool oeip_process(oeip_handle handle) {
+PAPI bool oeip_process(HOEIP handle) {
 	if (handle == nullptr) {
 		return false;
 	}
@@ -62,7 +62,7 @@ PAPI bool oeip_process(oeip_handle handle) {
 	return handle->oeip->process();
 }
 
-PAPI bool oeip_register_stage_output_callback(oeip_handle handle, oeip_cb_output fun) {
+PAPI bool oeip_register_stage_output_callback(HOEIP handle, oeip_cb_output fun) {
 	if (handle == nullptr) {
 		return false;
 	}
@@ -77,7 +77,7 @@ PAPI bool oeip_register_stage_output_callback(oeip_handle handle, oeip_cb_output
 	return true;
 }
 
-PAPI bool oeip_register_progress_callback(oeip_handle handle, oeip_cb_progress fun) {
+PAPI bool oeip_register_progress_callback(HOEIP handle, oeip_cb_progress fun, unsigned mask) {
 	if (handle == nullptr) {
 		return false;
 	}
@@ -88,6 +88,6 @@ PAPI bool oeip_register_progress_callback(oeip_handle handle, oeip_cb_progress f
 		return false;
 	}
 
-	handle->oeip->register_progress_callback(fun);
+	handle->oeip->register_progress_callback(fun, mask);
 	return true;
 }
