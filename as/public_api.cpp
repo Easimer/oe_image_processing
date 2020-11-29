@@ -8,7 +8,7 @@ struct oeip_handle {
 	std::unique_ptr<IOEIP> oeip;
 };
 
-PAPI HOEIP oeip_open_video(char const *pathToInput, char const *pathToOutput) {
+PAPI HOEIP oeip_open_video(char const *pathToInput, char const *pathToOutput, int flags) {
 	if (pathToInput == nullptr) {
 		return nullptr;
 	}
@@ -19,6 +19,10 @@ PAPI HOEIP oeip_open_video(char const *pathToInput, char const *pathToOutput) {
 	if (handle->oeip == nullptr) {
 		delete handle;
 		return nullptr;
+	}
+
+	if (flags & OEIP_FLAGS_APPLY_OTSU_BINARIZATION) {
+		handle->oeip->enable_otsu_binarization();
 	}
 
 	return handle;

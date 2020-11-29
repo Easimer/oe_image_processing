@@ -22,13 +22,14 @@ namespace Net.Easimer.KAA.Front
             OeipCApi.RegisterStageOutputCallback(_handle, _cb_output);
         }
 
-        public static PipelineDemoSession Create(string pathToVideoFile)
+        public static PipelineDemoSession Create(string pathToVideoFile, bool applyOtsuBinarization)
         {
             IntPtr handle;
 
             try
             {
-                handle = OeipCApi.OpenVideo(pathToVideoFile);
+                int flags = (int)(applyOtsuBinarization ? OeipCApi.Flags.ApplyOtsuBinarization : OeipCApi.Flags.None);
+                handle = OeipCApi.OpenVideo(pathToVideoFile, null, flags);
             }
             catch(DllNotFoundException ex)
             {
@@ -132,10 +133,17 @@ namespace Net.Easimer.KAA.Front
 
         private static class OeipCApi
         {
+            [Flags]
+            public enum Flags
+            {
+                None = 0,
+                ApplyOtsuBinarization = 1 << 0,
+            }
+
             public delegate void OutputCallback(Stage stage, BufferColorSpace cs, IntPtr buffer, int bytes, int width, int height, int stride);
 
-            [DllImport("core.dll", EntryPoint = "oeip_open_video")]
-            public static extern IntPtr OpenVideo(string pathInput, string pathOutput = null);
+            [DllImport("core.dll", EntryPoint = "oeip_open_video", CharSet = CharSet.Ansi)]
+            public static extern IntPtr OpenVideo(string pathInput, string pathOutput = null, int flags = 0);
 
             [DllImport("core.dll", EntryPoint = "oeip_close_video")]
             public static extern void CloseVideo(IntPtr handle);

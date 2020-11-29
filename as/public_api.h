@@ -30,6 +30,14 @@ enum oeip_buffer_color_space : int {
 };
 
 /**
+ * Konfiguracios flag-ek.
+ */
+enum oeip_flags : int {
+    OEIP_FLAGS_NONE = 0,
+    OEIP_FLAGS_APPLY_OTSU_BINARIZATION = 1 << 0,
+};
+
+/**
  * Progress Callback altal atadott progress informacio.
  */
 struct oeip_progress_info {
@@ -62,6 +70,7 @@ using oeip_cb_progress = void (*)(struct oeip_progress_info const *progress);
  * 
  * @param pathToInput Utvonal a bemeneti videora. Nem lehet NULL.
  * @param pathToOutput Utvonal a kimeneti videora. Lehet NULL.
+ * @param flags Konfiguracios flag-ek
  *
  * @return Visszater egy handle-el a session-re, vagy hiba eseten NULL-al.
  *
@@ -69,7 +78,7 @@ using oeip_cb_progress = void (*)(struct oeip_progress_info const *progress);
  * megnyitni a fajlt; a kimeneti video utvonala nem NULL, de a fajlt nem
  * lehetett megnyitni.
  */
-PAPI HOEIP oeip_open_video(char const *pathToInput, char const *pathToOutput);
+PAPI HOEIP oeip_open_video(char const *pathToInput, char const *pathToOutput, int flags);
 
 /**
  * Bezarja a session-t es felszabaditja a lefoglalt eroforrasokat.

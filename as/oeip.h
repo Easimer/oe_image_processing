@@ -23,11 +23,16 @@ public:
 	bool process() {
 		return process_impl();
 	}
+
+	void enable_otsu_binarization() {
+		enable_otsu_binarization_impl();
+	}
 	
 protected:
 	virtual void register_stage_output_callback_impl(oeip_cb_output fun) = 0;
 	virtual void register_progress_callback_impl(oeip_cb_progress fun) = 0;
 	virtual void set_progress_callback_mask(unsigned mask) = 0;
+	virtual void enable_otsu_binarization_impl() = 0;
 
 	virtual bool step_impl() = 0;
 	virtual bool process_impl() = 0;

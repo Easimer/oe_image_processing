@@ -187,13 +187,11 @@ protected:
 		pyrDown(thresh, thresh, cv::Size(thresh.cols / 2, thresh.rows / 2));
 
 		// A threshold maszkot es az edge buffert homalyositjuk, majd binarizaljuk
-		// GaussianBlur(thresh, thresh_blur3, { 3, 3 }, 0.0f);
 		boxFilter(thresh, thresh_blur3, thresh.type(), { 3, 3 });
-		// GaussianBlur(edge_cur_bin, avg_bin_blur3, { 3, 3 }, 0.0f);
 		boxFilter(edge_cur_bin, avg_bin_blur3, edge_cur_bin.type(), { 3, 3 });
 
-		threshold(avg_bin_blur3, avg_bin_blur3, 0, 255, cv::THRESH_BINARY);
-		threshold(thresh_blur3, thresh_blur3, 0, 255, cv::THRESH_BINARY);
+		threshold(avg_bin_blur3, avg_bin_blur3, 0, 255, _threshold_type);
+		threshold(thresh_blur3, thresh_blur3, 0, 255, _threshold_type);
 
 		// Vesszuk a threshold maszk es az edge buffer uniojat
 		bitwise_and(avg_bin_blur3, thresh_blur3, subtitle_mask);
@@ -242,6 +240,10 @@ protected:
 		}
 
 		return ret;
+	}
+
+	void enable_otsu_binarization_impl() override {
+		_threshold_type |= cv::THRESH_OTSU;
 	}
 
 	bool process_impl() override {
@@ -360,6 +362,7 @@ private:
 
 	int _total_frames;
 	unsigned _progress_callback_mask;
+	int _threshold_type = cv::THRESH_BINARY;
 };
 
 std::unique_ptr<IOEIP> make_oeip(char const *pathToInput) {

@@ -24,6 +24,7 @@ namespace Net.Easimer.KAA.Front
             this.btnPipeline = new System.Windows.Forms.Button();
             this.btnInpaintingDemo = new System.Windows.Forms.Button();
             this.btnProcessVideo = new System.Windows.Forms.Button();
+            this.chkOtsu = new System.Windows.Forms.CheckBox();
             this.SuspendLayout();
             // 
             // btnPipeline
@@ -56,9 +57,20 @@ namespace Net.Easimer.KAA.Front
             this.btnProcessVideo.UseVisualStyleBackColor = true;
             this.btnProcessVideo.Click += new System.EventHandler(this.ProcessVideo);
             // 
+            // chkOtsu
+            // 
+            this.chkOtsu.AutoSize = true;
+            this.chkOtsu.Location = new System.Drawing.Point(12, 99);
+            this.chkOtsu.Name = "chkOtsu";
+            this.chkOtsu.Size = new System.Drawing.Size(104, 17);
+            this.chkOtsu.TabIndex = 3;
+            this.chkOtsu.Text = "Otsu binarization";
+            this.chkOtsu.UseVisualStyleBackColor = true;
+            // 
             // FormMain
             // 
             this.ClientSize = new System.Drawing.Size(343, 371);
+            this.Controls.Add(this.chkOtsu);
             this.Controls.Add(this.btnProcessVideo);
             this.Controls.Add(this.btnInpaintingDemo);
             this.Controls.Add(this.btnPipeline);
@@ -67,6 +79,7 @@ namespace Net.Easimer.KAA.Front
             this.ShowIcon = false;
             this.Text = "Front";
             this.ResumeLayout(false);
+            this.PerformLayout();
 
         }
 
@@ -79,7 +92,7 @@ namespace Net.Easimer.KAA.Front
             {
                 try
                 {
-                    var oeip = PipelineDemoSession.Create(dlg.FileName);
+                    var oeip = PipelineDemoSession.Create(dlg.FileName, chkOtsu.Checked);
 
                     if (oeip != null)
                     {
@@ -108,5 +121,7 @@ namespace Net.Easimer.KAA.Front
             var wnd = FormProcess.Make();
             wnd?.Show();
         }
+
+        private CheckBox chkOtsu;
     }
 }
