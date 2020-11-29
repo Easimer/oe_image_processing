@@ -77,11 +77,18 @@ namespace Net.Easimer.KAA.Front
             var res = dlg.ShowDialog();
             if(res == DialogResult.OK)
             {
-                var oeip = PipelineDemoSession.Create(dlg.FileName);
-
-                if(oeip != null)
+                try
                 {
-                    new FormPipeline(oeip).Show();
+                    var oeip = PipelineDemoSession.Create(dlg.FileName);
+
+                    if (oeip != null)
+                    {
+                        new FormPipeline(oeip).Show();
+                    }
+                }
+                catch(Exception ex)
+                {
+                    MessageBox.Show(ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 }
             }
         }

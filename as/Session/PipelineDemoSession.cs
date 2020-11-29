@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Drawing;
+using System.IO;
 using System.Runtime.InteropServices;
 
 namespace Net.Easimer.KAA.Front
@@ -23,20 +24,30 @@ namespace Net.Easimer.KAA.Front
 
         public static PipelineDemoSession Create(string pathToVideoFile)
         {
+            IntPtr handle;
+
             try
             {
-                var handle = OeipCApi.OpenVideo(pathToVideoFile);
-                if (handle != IntPtr.Zero)
-                {
-                    return new PipelineDemoSession(handle);
-                }
+                handle = OeipCApi.OpenVideo(pathToVideoFile);
             }
-            catch(System.DllNotFoundException)
+            catch(DllNotFoundException ex)
             {
-                throw new DllNotFoundException("Can't find one or two DLLs. Make sure that front.exe's working directory has a copy of both core.dll and opencv_world440.dll.");
+                throw new DllNotFoundException("Can't find one or two DLLs. Make sure that front.exe's working directory has a copy of both core.dll and opencv_world450.dll!", ex);
             }
 
-            return null;
+            if (handle == IntPtr.Zero)
+            {
+                if(File.Exists(pathToVideoFile))
+                {
+                    throw new DllNotFoundException("Can't find one or more DLLs. Make sure that front.exe's working directory has a copy of both opencv_world440.dll and opencv_videoio_ffmpeg450_64.dll.");
+                }
+                else
+                {
+                    throw new FileNotFoundException($"File {pathToVideoFile} was not found!");
+                }
+            }
+
+            return new PipelineDemoSession(handle);
         }
 
         public void Dispose()
