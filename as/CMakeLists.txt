@@ -68,7 +68,6 @@ set_property(TARGET front PROPERTY VS_DOTNET_REFERENCES
     "System.Data"
     "System.Drawing"
     "System.Windows.Forms"
-    "System.Numerics.Vectors"
 )
 
 target_compile_options(front PRIVATE -langversion:latest /platform:x64 /unsafe)

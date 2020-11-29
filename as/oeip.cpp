@@ -7,24 +7,7 @@
 #include "oeip.h"
 #include "image_inpainting.h"
 
-// TODO: This should be configurable by the user
 static constexpr int total_edge_buffers = 4;
-
-struct Edge_Buffers {
-	Edge_Buffers(int n, cv::Size const& size) {
-		for (int i = 0; i < n; i++) {
-			_buffers.emplace_back(cv::UMat(size, CV_16U));
-		}
-	}
-
-	std::vector<cv::UMat> _buffers;
-};
-
-static int get_edge_buffer_weight(int c, int n, int i) {
-	// i = c -> n
-	// else (i + n - c) `mod` n
-	return (i != c) ? ((i + n - c) % n) : (n);
-}
 
 static void two_major_bins(cv::Mat const& H, int* idx0, int* idx1) {
 	int N = H.cols * H.rows;
@@ -85,7 +68,6 @@ public:
 		_mask_subtitle_bottom(cv::Rect(width * 0.2f, height * 0.8f, width * 0.6f, height * 0.2f)) = 255;
 
 		for (int i = 0; i < total_edge_buffers; i++) {
-			cv::Mat tmp;
 			_edge_buffers[i] = cv::UMat::zeros(height, width, CV_8U);
 		}
 
@@ -101,29 +83,6 @@ protected:
 		_cb_progress = fun;
 		struct oeip_progress_info inf = { 0, _total_frames };
 		_cb_progress(&inf);
-	}
-
-	void edge_buffers_average(cv::UMat& avg, cv::UMat& avg_bin, cv::Size const& size) {
-		// NOTE: maguk az edge bufferek 8U formatumban vannak es 0-255 normalizalt ertekek vannak benne
-		// Ezeket akkumulaljuk 16U matrixba
-		cv::UMat acc(size, CV_16U, cv::Scalar(0));
-		for (int i = 0; i < total_edge_buffers; i++) {
-			// Sulyozott atlag; a legujabb kapja a legnagyobb sulyt, a legregebbi a legkisebbet
-			cv::UMat eb(size, CV_16U);
-			_edge_buffers[i].convertTo(eb, CV_16U);
-			auto w = get_edge_buffer_weight(_edge_buffers_cursor, total_edge_buffers, i);
-			// acc += w * eb;
-			cv::scaleAdd(acc, w, eb, acc);
-		}
-
-		auto const sum_of_weights = total_edge_buffers * (total_edge_buffers + 1) / 2;
-		
-		auto avg_tmp = cv::UMat::zeros(acc.rows, acc.cols, acc.type());
-		cv::scaleAdd(acc, 1 / (double)sum_of_weights, avg_tmp, avg_tmp);
-		// cv::UMat avg_tmp = acc / sum_of_weights;
-
-		avg_tmp.convertTo(avg, CV_8U);
-		threshold(avg, avg_bin, 252, 255, cv::THRESH_BINARY);
 	}
 
 	// Felirat-maszk eloallitasa
@@ -153,7 +112,7 @@ protected:
 		auto edge_avg = average_edge_buffers();
 		edge_avg.convertTo(edge_avg, CV_8U);
 		cv::UMat edge_cur_bin;
-		cv::threshold(edge_avg, edge_cur_bin, 127, 255, CV_8U);
+		threshold(edge_avg, edge_cur_bin, 127, 255, CV_8U);
 
 		emit_output(OEIP_STAGE_ACCUMULATED_EDGE_BUFFER, OEIP_COLSPACE_R8, edge_cur_bin);
 
@@ -163,7 +122,7 @@ protected:
 		cvtColor(frame, buf_ycrcb, cv::COLOR_RGB2YCrCb);
 		// cv::UMat buf_ycrcb_channels[3];
 		std::vector<cv::UMat> buf_ycrcb_channels;
-		cv::split(buf_ycrcb, buf_ycrcb_channels);
+		split(buf_ycrcb, buf_ycrcb_channels);
 
 		cv::UMat buf_cr;
 		cv::UMat buf_cb;
@@ -174,10 +133,10 @@ protected:
 
 		cv::UMat mask;
 
-		cv::bitwise_and(_mask_subtitle_bottom, edge_cur_bin, mask);
+		bitwise_and(_mask_subtitle_bottom, edge_cur_bin, mask);
 
-		cv::bitwise_and(buf_ycrcb_channels[1], mask, buf_cr);
-		cv::bitwise_and(buf_ycrcb_channels[2], mask, buf_cb);
+		bitwise_and(buf_ycrcb_channels[1], mask, buf_cr);
+		bitwise_and(buf_ycrcb_channels[2], mask, buf_cb);
 
 		cv::Mat buf_cr_loc, buf_cb_loc;
 
@@ -191,8 +150,8 @@ protected:
 		cv::UMat cr_hist, cb_hist;
 
 		// Letrehozzuk a kepkocka hisztogramjat a Cr es Cb csatornakban
-		cv::calcHist(&buf_cr_loc, 1, 0, mask, cr_hist, 1, &histSize, &histRange, true, false);
-		cv::calcHist(&buf_cb_loc, 1, 0, mask, cb_hist, 1, &histSize, &histRange, true, false);
+		calcHist(&buf_cr_loc, 1, 0, mask, cr_hist, 1, &histSize, &histRange, true, false);
+		calcHist(&buf_cb_loc, 1, 0, mask, cb_hist, 1, &histSize, &histRange, true, false);
 
 		// Megkeressuk a ket foszint mindegyik csatornaban (kiveve luma)
 		int cr0, cr1;
@@ -205,39 +164,39 @@ protected:
 		// thresh_CH a fenti ket maszk unioja
 
 		cv::UMat thresh_cr0, thresh_cr1;
-		cv::inRange(buf_ycrcb_channels[1], cv::Scalar(cr0), cv::Scalar(cr0), thresh_cr0);
-		cv::inRange(buf_ycrcb_channels[1], cv::Scalar(cr1), cv::Scalar(cr1), thresh_cr1);
+		inRange(buf_ycrcb_channels[1], cv::Scalar(cr0), cv::Scalar(cr0), thresh_cr0);
+		inRange(buf_ycrcb_channels[1], cv::Scalar(cr1), cv::Scalar(cr1), thresh_cr1);
 		cv::UMat thresh_cr;
-		cv::max(thresh_cr0, thresh_cr1, thresh_cr);
+		max(thresh_cr0, thresh_cr1, thresh_cr);
 
 		cv::UMat thresh_cb0, thresh_cb1;
-		cv::inRange(buf_ycrcb_channels[2], cv::Scalar(cb0), cv::Scalar(cb0), thresh_cb0);
-		cv::inRange(buf_ycrcb_channels[2], cv::Scalar(cb1), cv::Scalar(cb1), thresh_cb1);
+		inRange(buf_ycrcb_channels[2], cv::Scalar(cb0), cv::Scalar(cb0), thresh_cb0);
+		inRange(buf_ycrcb_channels[2], cv::Scalar(cb1), cv::Scalar(cb1), thresh_cb1);
 		cv::UMat thresh_cb;
-		cv::max(thresh_cb0, thresh_cb1, thresh_cb);
+		max(thresh_cb0, thresh_cb1, thresh_cb);
 
 		// Vesszuk a ket thresh_CH maszk uniojat
 		cv::UMat thresh(thresh_cr.rows, thresh_cr.cols, CV_32F);
-		cv::max(thresh_cr, thresh_cb, thresh);
+		max(thresh_cr, thresh_cb, thresh);
 
 		cv::UMat subtitle_mask;
 		cv::UMat thresh_blur3, avg_bin_blur3;
 
-		cv::bitwise_and(edge_cur_bin, _mask_subtitle_bottom, edge_cur_bin);
-		cv::pyrDown(edge_cur_bin, edge_cur_bin, cv::Size(edge_cur_bin.cols / 2, edge_cur_bin.rows / 2));
-		cv::pyrDown(thresh, thresh, cv::Size(thresh.cols / 2, thresh.rows / 2));
+		bitwise_and(edge_cur_bin, _mask_subtitle_bottom, edge_cur_bin);
+		pyrDown(edge_cur_bin, edge_cur_bin, cv::Size(edge_cur_bin.cols / 2, edge_cur_bin.rows / 2));
+		pyrDown(thresh, thresh, cv::Size(thresh.cols / 2, thresh.rows / 2));
 
 		// A threshold maszkot es az edge buffert homalyositjuk, majd binarizaljuk
-		// cv::GaussianBlur(thresh, thresh_blur3, { 3, 3 }, 0.0f);
-		cv::boxFilter(thresh, thresh_blur3, thresh.type(), { 3, 3 });
-		// cv::GaussianBlur(edge_cur_bin, avg_bin_blur3, { 3, 3 }, 0.0f);
-		cv::boxFilter(edge_cur_bin, avg_bin_blur3, edge_cur_bin.type(), { 3, 3 });
+		// GaussianBlur(thresh, thresh_blur3, { 3, 3 }, 0.0f);
+		boxFilter(thresh, thresh_blur3, thresh.type(), { 3, 3 });
+		// GaussianBlur(edge_cur_bin, avg_bin_blur3, { 3, 3 }, 0.0f);
+		boxFilter(edge_cur_bin, avg_bin_blur3, edge_cur_bin.type(), { 3, 3 });
 
-		cv::threshold(avg_bin_blur3, avg_bin_blur3, 0, 255, cv::THRESH_BINARY);
-		cv::threshold(thresh_blur3, thresh_blur3, 0, 255, cv::THRESH_BINARY);
+		threshold(avg_bin_blur3, avg_bin_blur3, 0, 255, cv::THRESH_BINARY);
+		threshold(thresh_blur3, thresh_blur3, 0, 255, cv::THRESH_BINARY);
 
 		// Vesszuk a threshold maszk es az edge buffer uniojat
-		cv::bitwise_and(avg_bin_blur3, thresh_blur3, subtitle_mask);
+		bitwise_and(avg_bin_blur3, thresh_blur3, subtitle_mask);
 
 		if (_avg_subtitle_mask.empty()) {
 			// Ha meg nincs felirat-maszk (legelso kepkocka), akkor bemasoljuk a jelenlegit
@@ -264,7 +223,7 @@ protected:
 
 		cv::UMat buf_u, mask_u;
 		buf.copyTo(buf_u);
-		cv::resize(_avg_subtitle_mask, mask_u, buf.size());
+		resize(_avg_subtitle_mask, mask_u, buf.size());
 		oeip_inpaint_cvmat(_inpaint_res, buf_u, mask_u);
 
 		emit_output(OEIP_STAGE_OUTPUT, OEIP_COLSPACE_RGB888_RGB, _inpaint_res);
@@ -295,7 +254,7 @@ protected:
 
             cv::UMat buf_u, mask_u;
             buf.copyTo(buf_u);
-            cv::resize(_avg_subtitle_mask, mask_u, buf.size());
+            resize(_avg_subtitle_mask, mask_u, buf.size());
             oeip_inpaint_cvmat(_inpaint_res, buf_u, mask_u);
 
 			if (_output.has_value()) {
@@ -374,11 +333,11 @@ protected:
             _edge_buffers[i].convertTo(eb, CV_16U);
 
 			auto w = 1;
-			cv::scaleAdd(acc, w, eb, acc);
+			scaleAdd(acc, w, eb, acc);
 		}
 
 		auto avg_tmp = cv::UMat::zeros(acc.rows, acc.cols, acc.type());
-		cv::scaleAdd(acc, 1 / (double)total_edge_buffers, avg_tmp, avg_tmp);
+		scaleAdd(acc, 1 / (double)total_edge_buffers, avg_tmp, avg_tmp);
 		return avg_tmp;
 	}
 
