@@ -153,6 +153,12 @@ protected:
 		calcHist(&buf_cr_loc, 1, 0, mask, cr_hist, 1, &histSize, &histRange, true, false);
 		calcHist(&buf_cb_loc, 1, 0, mask, cb_hist, 1, &histSize, &histRange, true, false);
 
+		cv::UMat cr_hist_float, cb_hist_float;
+		cv::normalize(cr_hist, cr_hist_float, 1, 0, cv::NORM_L2);
+		cv::normalize(cb_hist, cb_hist_float, 1, 0, cv::NORM_L2);
+		emit_output(OEIP_STAGE_HISTOGRAM_CR, OEIP_COLSPACE_HISTOGRAM, cr_hist_float);
+		emit_output(OEIP_STAGE_HISTOGRAM_CB, OEIP_COLSPACE_HISTOGRAM, cb_hist_float);
+
 		// Megkeressuk a ket foszint mindegyik csatornaban (kiveve luma)
 		int cr0, cr1;
 		int cb0, cb1;

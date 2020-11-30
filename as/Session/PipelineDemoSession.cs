@@ -86,6 +86,9 @@ namespace Net.Easimer.KAA.Front
                 case BufferColorSpace.RGB888_RGB:
                     img = ImageConversion.CreateRGB(buffer, width, height, stride);
                     break;
+                case BufferColorSpace.HISTOGRAM:
+                    img = ImageConversion.MakeHistogram(buffer);
+                    break;
                 default:
                     return;
             }
@@ -113,6 +116,8 @@ namespace Net.Easimer.KAA.Front
             CurrentEdgeBuffer,
             AccumulatedEdgeBuffer,
             SubtitleMask,
+            HistogramCr,
+            HistogramCb,
 
             Output
         }
@@ -125,7 +130,9 @@ namespace Net.Easimer.KAA.Front
             RGB888_RGB,
             RGB888_YCBCR,
 
-            RGB888_UNSPEC
+            RGB888_UNSPEC,
+
+            HISTOGRAM,
         }
 
         public delegate void OutputCallback(Stage stage, Bitmap buf);

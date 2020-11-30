@@ -44,6 +44,12 @@ namespace Net.Easimer.KAA.Front
                 case PipelineDemoSession.Stage.Output:
                     ctl = imgOutput;
                     break;
+                case PipelineDemoSession.Stage.HistogramCr:
+                    ctl = imgHistCr;
+                    break;
+                case PipelineDemoSession.Stage.HistogramCb:
+                    ctl = imgHistCb;
+                    break;
                 default:
                     break;
             }
@@ -68,6 +74,8 @@ namespace Net.Easimer.KAA.Front
             this.imgEdgeCurrent = new Net.Easimer.KAA.Front.OutputControl();
             this.imgInput = new Net.Easimer.KAA.Front.OutputControl();
             this.imgOutput = new Net.Easimer.KAA.Front.OutputControl();
+            this.imgHistCr = new Net.Easimer.KAA.Front.OutputControl();
+            this.imgHistCb = new Net.Easimer.KAA.Front.OutputControl();
             this.toolStrip.SuspendLayout();
             this.SuspendLayout();
             // 
@@ -151,16 +159,36 @@ namespace Net.Easimer.KAA.Front
             this.imgOutput.Size = new System.Drawing.Size(296, 267);
             this.imgOutput.TabIndex = 6;
             // 
+            // imgHistCr
+            // 
+            this.imgHistCr.Location = new System.Drawing.Point(918, 295);
+            this.imgHistCr.Name = "imgHistCr";
+            this.imgHistCr.OutputImage = null;
+            this.imgHistCr.OutputStageName = "Histogram (Cr)";
+            this.imgHistCr.Size = new System.Drawing.Size(296, 267);
+            this.imgHistCr.TabIndex = 6;
+            // 
+            // imgHistCb
+            // 
+            this.imgHistCb.Location = new System.Drawing.Point(1220, 295);
+            this.imgHistCb.Name = "imgHistCb";
+            this.imgHistCb.OutputImage = null;
+            this.imgHistCb.OutputStageName = "Histogram (Cb)";
+            this.imgHistCb.Size = new System.Drawing.Size(296, 267);
+            this.imgHistCb.TabIndex = 6;
+            // 
             // FormPipeline
             // 
             this.AutoScroll = true;
-            this.ClientSize = new System.Drawing.Size(1526, 337);
+            this.ClientSize = new System.Drawing.Size(1526, 337 + 270);
             this.Controls.Add(this.imgSubtitleMask);
             this.Controls.Add(this.imgEdgeAccumulated);
             this.Controls.Add(this.imgEdgeCurrent);
             this.Controls.Add(this.imgInput);
             this.Controls.Add(this.toolStrip);
             this.Controls.Add(this.imgOutput);
+            this.Controls.Add(this.imgHistCr);
+            this.Controls.Add(this.imgHistCb);
             this.Name = "FormPipeline";
             this.ShowIcon = false;
             this.Text = "Pipeline";
@@ -180,6 +208,8 @@ namespace Net.Easimer.KAA.Front
         private OutputControl imgEdgeCurrent;
         private OutputControl imgEdgeAccumulated;
         private OutputControl imgInput;
+        private OutputControl imgHistCr;
+        private OutputControl imgHistCb;
 
         private void TimerTick(object sender, EventArgs e)
         {

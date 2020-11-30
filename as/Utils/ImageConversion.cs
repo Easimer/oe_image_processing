@@ -95,6 +95,33 @@ namespace Net.Easimer.KAA.Front
             });
         }
 
+        public static Bitmap MakeHistogram(IntPtr buffer)
+        {
+            return CreateBitmapAndTransform(256, 256, bmp =>
+            {
+                unsafe
+                {
+                    var dst = (uint*)bmp.Scan0;
+                    var dstElemStride = bmp.Stride / 4;
+                    var histogram = (float*)buffer;
+
+                    for(int i = 0; i < 256 * 256; i++)
+                    {
+                        dst[i] = 0xFF000000;
+                    }
+
+                    for(int x = 0; x < 256; x++)
+                    {
+                        int h = 255 - (int)(histogram[x] * 255);
+                        for(int y = 255; y >= h; y--)
+                        {
+                            dst[y * dstElemStride + x] = 0xFFFF0000;
+                        }
+                    }
+                }
+            });
+        }
+
         private static Bitmap CreateBitmapAndTransform(int width, int height, Action<BitmapData> transformation)
         {
             var img = new Bitmap(width, height, PixelFormat.Format32bppArgb);
